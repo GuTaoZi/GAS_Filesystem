@@ -1,6 +1,8 @@
 #ifndef __GAS_H__
 #define __GAS_H__
 
+#include "def.h"
+
 #include <linux/types.h>
 
 struct gas_super_block {
@@ -26,7 +28,7 @@ struct gas_inode {
 };
 
 struct gas_dir_entry {
-    char de_name[SFS_MAX_NAME_LEN];
+    char de_name[GAS_MAX_NAME_LEN];
     __le32 de_inode;
 };
 
