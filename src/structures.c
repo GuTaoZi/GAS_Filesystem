@@ -4,16 +4,16 @@
 #include <linux/init.h>
 
 const struct file_operations sfs_file_ops = {
-	.llseek = generic_file_llseek, //opt
+	.llseek = generic_file_llseek,
     
 	.read = new_sync_read,
 	.read_iter = generic_file_read_iter,
     
 	.write = do_sync_write,
-	.write_iter = generic_file_aio_write, //opt
-	.mmap = generic_file_mmap,   //opt
-	.splice_read = generic_file_splice_read, //opt
-	.splice_write = generic_file_splice_write //opt
+	.write_iter = generic_file_write_iter,
+	.mmap = generic_file_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write
 };
 
 const struct address_space_operations sfs_aops = { // Optional
