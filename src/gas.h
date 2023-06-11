@@ -4,6 +4,7 @@
 #include "def.h"
 
 #include <linux/types.h>
+#include <linux/fs.h>
 
 struct gas_super_block {
     __le32 s_magic;
@@ -25,6 +26,11 @@ struct gas_inode {
     __le32 i_mtime;
     __le32 i_ctime;
     __le32 i_blkaddr[9];    //6+1+1+1
+};
+
+struct gas_inode_info {
+	__le32          blkaddr[9];	
+	struct inode	inode;
 };
 
 struct gas_dir_entry {
