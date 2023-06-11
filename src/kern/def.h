@@ -53,7 +53,7 @@ const struct file_operations gas_file_ops = {
     .splice_write   = iter_file_splice_write
 };
 
-static struct file_system_type gas_fs_type = {
+const static struct file_system_type gas_fs_type = {
     .owner      = THIS_MODULE,
     .name       = "gas",
     .mount      = gas_mount,
@@ -61,7 +61,7 @@ static struct file_system_type gas_fs_type = {
     .fs_flags   = FS_REQUIRES_DEV
 };
 
-static struct super_operations gas_super_ops = {
+const static struct super_operations gas_super_ops = {
     .alloc_inode    = gas_alloc_inode,
     .destroy_inode  = gas_destroy_inode,
     .write_inode    = gas_write_inode,
@@ -70,11 +70,15 @@ static struct super_operations gas_super_ops = {
     .statfs         = gas_statfs,
 };
 
-static struct inode_operations gas_inode_ops = {
+const static struct inode_operations gas_inode_ops = {
     .create     = gas_create,
     .lookup     = gas_lookup,
     .mkdir      = gas_mkdir,
-    .permission = gas_permission
+    .link       = gas_link,
+    .gas        = gas_symlink,
+    .unlink     = gas_unlink,
+	.rmdir		= gas_rmdir,
+    .mknod		= sfs_mknod
 };
 
 #endif

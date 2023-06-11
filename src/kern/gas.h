@@ -6,7 +6,7 @@
 #include <linux/types.h>
 #include <linux/fs.h>
 
-struct gas_super_block {
+struct gas_sb_info {
     __le32 s_magic;
     __le32 s_blocksize;
     __le32 s_bam_blocks;

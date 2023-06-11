@@ -1,7 +1,8 @@
+#include <linux/aio.h>
+#include <linux/buffer_head.h>
+#include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/vfs.h>
-#include <linux/slab.h>
-#include <linux/buffer_head.h>
 #include <linux/writeback.h>
 #include <linux/stat.h>
 
@@ -11,6 +12,7 @@ static struct kmem_cache *gas_inode_cache;
 
 static struct inode* gas_alloc_inode(struct super_block *sb)
 {
+	// 在cache里申请一个node_info
 	struct gas_inode_info *info = (struct gas_inode_info *)
 		kmem_cache_alloc(gas_inode_cache, GFP_KERNEL);
 	return info ? &info->inode : NULL;
@@ -18,6 +20,8 @@ static struct inode* gas_alloc_inode(struct super_block *sb)
 
 void gas_destroy_callback(struct rcu_head *head)
 {
+	// RCU: Ready-Copy-Update
+	// 写者复制更新，直到没有读者才写回
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 	kmem_cache_free(gas_inode_cache,
 		container_of(inode, struct gas_inode_info, inode));
@@ -28,46 +32,38 @@ void gas_destroy_inode(struct inode *inode)
 	call_rcu(&inode->i_rcu, gas_destroy_callback)
 }
 
-struct gas_inode *gas_get_inode(struct super_block *sb, ino_t )
+// void gas_put_super(struct super_block *sb)
+// {
+// 	// 释放超级块
+// 	struct gas_sb_info *sb_info = sb->s_sf_info;
+// 	if (sb_info) {
+// 		int i;
+// 		for (i = 0; i < sb_info->s_bam_blocks; i++)
+// 			brelse(sb_info->s_bam_bh[i]); //
+// 		for (i = 0; i < sb_info->s_iam_blocks; i++)
+// 			brelse(sb_info->s_iam_bh[i]); //
+// 		kfree(sb_info->s_bam_bh);
+// 		kfree(sb_info);
+// 	}
+// 	sb->s_fs_info = NULL;
+// }
 
-static struct buffer_head *gas_update_ionde(struct inode *inode)
-{
-	struct buffer_head *bh;
-	struct gas_inode_info *info = container_of(inode, struct gas_inode_info, inode);
-	struct gas_inode *gnode = gas_get_inode(inode->i_sb, inode->i_ino, &bh);
-	if (!gnode)
-		return NULL;
-	
-}
-
-int gas_write_inode(struct inode *inode, struct writeback_control *ctrl)
-{
-	int err = 0;
-	struct buffer_head *bh = gas_update_ionde(inode);
-	if (!bh)
-		return -EIO;
-	if (ctrl->sync_mode == WB_SYNC_ALL && buffer_dirty(bh))
-	{
-		sync_dirty_buffer(hb);
-		if (buffer_req(bh) && !buffer_uptodate(bh))
-			err = -EIO;
-	}
-	brelas(bh);
-	return err;
-}
-
-void sfs_evict_inode(struct inode *inode)
-{
-
-}
-
-void gas_put_super(struct super_block *super_block)
-{
-
-}
-
+// 暂时看不懂
 static int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs)
 {
-
+	struct super_block *sb = dentry->d_sb;
+	struct sfs_sb_info *sb_info = sb->s_sf_info;
+	u64 id = huge_encode_dev(sb->s_bdev->bd_dev);
+	buf->f_type = sb->s_magic;
+	buf->f_bsize = sb->s_blocksize;
+	buf->f_blocks = sb_info->s_nblocks - sb_info->s_data_block_start;
+	buf->f_bfree = sfs_count_free_blocks(sb);
+	buf->f_bavail = buf->f_bfree;
+	buf->f_files = sb_info->s_ninodes;
+	buf->f_ffree = sfs_count_free_inodes(sb);
+	buf->f_namelen = GAS_MAX_NAME_LEN;
+	buf->f_fsid.val[0] = (u32)id;
+	buf->f_fsid.val[1] = (u32)(id>>32);
+	return 0;
 }
 
