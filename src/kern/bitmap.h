@@ -1,8 +1,8 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
-#include <linux/buffer_head.h>
 #include <linux/bitops.h>
+#include <linux/buffer_head.h>
 #include <linux/sched.h>
 
 void gas_free_block(struct inode *inode, unsigned long block);

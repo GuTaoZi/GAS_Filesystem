@@ -1,4 +1,4 @@
-#ifndef __SUPER_H__ 
+#ifndef __SUPER_H__
 #define __SUPER_H__
 
 #include <linux/buffer_head.h>
@@ -12,12 +12,12 @@
 static struct kmem_cache *gas_inode_cache;
 
 static struct super_operations const gas_super_ops = {
-	.alloc_inode		= gas_alloc_inode,
-	.destroy_inode		= gas_destroy_inode,
-	.write_inode		= gas_write_inode,
-	.evict_inode		= gas_evict_inode,
-	.put_super		= gas_put_super,
-	.statfs			= gas_statfs,
+    .alloc_inode = gas_alloc_inode,
+    .destroy_inode = gas_destroy_inode,
+    .write_inode = gas_write_inode,
+    .evict_inode = gas_evict_inode,
+    .put_super = gas_put_super,
+    .statfs = gas_statfs,
 };
 
 // Function Declaration
@@ -51,4 +51,4 @@ static void __exit exit_gas_fs(void);
 
 // Micro Bonding
 module_init(init_gas_fs);
-module_exit(exit_gas_fs); 
+module_exit(exit_gas_fs);
