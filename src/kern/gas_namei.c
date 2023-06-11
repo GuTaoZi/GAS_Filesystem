@@ -1,5 +1,7 @@
 #include <linux/fs.h>
+
 #include "gas.h"
+#include "gas_namei.h"
 
 // add a file (non-dir)
 static int add_nondir(struct dentry *dentry, struct inode *inode)
@@ -10,13 +12,15 @@ static int add_nondir(struct dentry *dentry, struct inode *inode)
 		// link them together in vfs
 		d_instantiate(dentry, inode);
 		return 0;
-	} else {
+	}
+	else
+	{
 		iput(inode);
 		return err;
 	}
 }
 
-static int gas_mknod(struct inode *dir, struct dentry *dentry,
+int gas_mknod(struct inode *dir, struct dentry *dentry,
 					 umode_t mode, dev_t rdev)
 {
 	int err;
@@ -40,7 +44,7 @@ static int gas_mknod(struct inode *dir, struct dentry *dentry,
 }
 
 // mkdir
-static int gas_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+int gas_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	struct inode *inode;
 	int err;
@@ -78,7 +82,7 @@ out_dir:
 	goto out;
 }
 
-static struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry,
+struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry,
 								 unsigned flags)
 {
 	struct inode *inode = NULL;
@@ -105,7 +109,7 @@ static struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry,
 }
 
 // create new inode (file)
-static int gas_create(struct inode *dir, struct dentry *dentry,
+int gas_create(struct inode *dir, struct dentry *dentry,
 					  umode_t mode, bool excl)
 {
 	int err;
@@ -122,7 +126,7 @@ static int gas_create(struct inode *dir, struct dentry *dentry,
 }
 
 // Soft link
-static int gas_symlink(struct inode *dir, struct dentry *dentry,
+int gas_symlink(struct inode *dir, struct dentry *dentry,
 					   const char *symname)
 {
 	int err = -ENAMETOOLONG;
@@ -152,7 +156,7 @@ out_fail:
 }
 
 // hard link
-static int gas_link(struct dentry *old_dentry, struct inode *dir,
+int gas_link(struct dentry *old_dentry, struct inode *dir,
 					struct dentry *dentry)
 {
 	struct inode *inode = old_dentry->d_inode;
@@ -164,7 +168,7 @@ static int gas_link(struct dentry *old_dentry, struct inode *dir,
 }
 
 // unlink
-static int gas_unlink(struct inode *dir, struct dentry *dentry)
+int gas_unlink(struct inode *dir, struct dentry *dentry)
 {
 	int err = -ENOENT;
 	struct inode *inode = dentry->d_inode;
@@ -187,7 +191,7 @@ end_unlink:
 	return err;
 }
 
-static int gas_rmdir(struct inode *dir, struct dentry *dentry)
+int gas_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	struct inode *inode = dentry->d_inode;
 	int err = -ENOTEMPTY;
@@ -206,8 +210,9 @@ static int gas_rmdir(struct inode *dir, struct dentry *dentry)
 	return err;
 }
 
-static int gas_rename(struct inode *old_dir, struct dentry *old_dentry,
-					  struct inode *new_dir, struct dentry *new_dentry)
+// used for cp, mv and so on
+int gas_rename(struct inode *old_dir, struct dentry *old_dentry,
+			   struct inode *new_dir, struct dentry *new_dentry)
 {
 	struct inode *old_inode = old_dentry->d_inode;
 	struct inode *new_inode = new_dentry->d_inode;
@@ -229,7 +234,7 @@ static int gas_rename(struct inode *old_dir, struct dentry *old_dentry,
 			goto out_old;
 	}
 
-	if (new_inode)
+	if (new_inode) // move to a exist place
 	{
 		struct page *new_page;
 		struct gas_dir_entry *new_de;
@@ -280,7 +285,7 @@ out:
 	return err;
 }
 
-// 
+// get some attribute
 int gas_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 {
 	struct super_block *sb = dentry->d_sb;
@@ -290,30 +295,3 @@ int gas_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 	stat->blksize = sb->s_blocksize;
 	return 0;
 }
-
-// operations for a file inode
-const struct inode_operations gas_file_inode_ops = {
-	.getattr = gas_getattr,
-};
-
-// operations for a link inode
-const struct inode_operations gas_symlink_inode_ops = {
-	.readlink = generic_readlink,
-	.follow_link = page_follow_link_light,
-	.put_link = page_put_link,
-	.getattr = gas_getattr,
-};
-
-// operations for a directroy inode
-const struct inode_operations gas_dir_inode_ops = {
-	.create = gas_create,
-	.lookup = gas_lookup,
-	.link = gas_link,
-	.unlink = gas_unlink,
-	.symlink = gas_symlink,
-	.mknod = gas_mknod,
-	.mkdir = gas_mkdir,
-	.rmdir = gas_rmdir,
-	.rename = gas_rename,
-	.getattr = gas_getattr,
-};
