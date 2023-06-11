@@ -5,6 +5,7 @@
 
 #include "gas.h"
 
+// Some useful functions
 static inline size_t gas_dir_pages(struct inode *inode)
 {
     return (inode->i_size + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
