@@ -73,7 +73,12 @@ const static struct super_operations gas_super_ops = {
 const static struct inode_operations gas_inode_ops = {
     .create     = gas_create,
     .lookup     = gas_lookup,
-    .mkdir      = gas_mkdir
+    .mkdir      = gas_mkdir,
+    .link       = gas_link,
+    .gas        = gas_symlink,
+    .unlink     = gas_unlink,
+	.rmdir		= gas_rmdir,
+    .mknod		= sfs_mknod
 };
 
 #endif
