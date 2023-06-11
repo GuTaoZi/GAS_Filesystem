@@ -1,50 +1,62 @@
 #include <linux/fs.h>
 #include "gas.h"
 
+// add a file (non-dir)
 static int add_nondir(struct dentry *dentry, struct inode *inode)
 {
 	int err = gas_add_link(dentry, inode);
-	if (!err) {
+	if (!err)
+	{
+		// link them together in vfs
 		d_instantiate(dentry, inode);
 		return 0;
+	} else {
+		iput(inode);
+		return err;
 	}
-	iput(inode);
-	return err;	
 }
 
-static int gas_mknod(struct inode *dir, struct dentry *dentry, 
-			umode_t mode, dev_t rdev)
+static int gas_mknod(struct inode *dir, struct dentry *dentry,
+					 umode_t mode, dev_t rdev)
 {
 	int err;
 	struct inode *inode;
 
+	// device is valid. Always returns 1 in linux3.13
 	if (!new_valid_dev(rdev))
 		return -EINVAL;
 
+	// create a new inode under a directory
 	inode = gas_new_inode(dir, mode, &err);
-	if (!err && inode) {
+	if (!err && inode)
+	{
+		// set operations structure
 		gas_set_inode(inode, rdev);
 		mark_inode_dirty(inode);
+
 		err = add_nondir(dentry, inode);
 	}
 	return err;
-} 
+}
 
+// mkdir
 static int gas_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	struct inode *inode;
 	int err;
 
+	// increate link count. Atomic
 	inode_inc_link_count(dir);
 
 	inode = gas_new_inode(dir, S_IFDIR | mode, &err);
 	if (!inode)
 		goto out_dir;
-	
+
 	inode_inc_link_count(inode);
 
 	gas_set_inode(inode, 0);
 
+	// make it useable. (Set from random to 0)
 	err = gas_make_empty(inode, dir);
 	if (err)
 		goto out_fail;
@@ -67,7 +79,7 @@ out_dir:
 }
 
 static struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry,
-			unsigned flags)
+								 unsigned flags)
 {
 	struct inode *inode = NULL;
 	ino_t ino;
@@ -75,39 +87,47 @@ static struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry,
 	if (dentry->d_name.len >= gas_MAX_NAME_LEN)
 		return ERR_PTR(-ENAMETOOLONG);
 
+	// Find the inode
 	ino = gas_inode_by_name(dir, &dentry->d_name);
-	if (ino) {
+	if (ino)
+	{
+		// read out inode
 		inode = gas_iget(dir->i_sb, ino);
-		if (IS_ERR(inode)) {
+		if (IS_ERR(inode))
+		{
 			pr_err("Cannot read inode %lu", (unsigned long)ino);
 			return ERR_PTR(PTR_ERR(inode));
 		}
+		// Add it into dentry's hash_list
 		d_add(dentry, inode);
 	}
 	return NULL;
 }
 
-static int gas_create(struct inode *dir, struct dentry *dentry, 
-			umode_t mode, bool excl)
+// create new inode (file)
+static int gas_create(struct inode *dir, struct dentry *dentry,
+					  umode_t mode, bool excl)
 {
 	int err;
 	struct inode *inode;
 
 	inode = gas_new_inode(dir, mode, &err);
-	if (!err && inode) {
+	if (!err && inode)
+	{
 		gas_set_inode(inode, 0);
 		mark_inode_dirty(inode);
 		err = add_nondir(dentry, inode);
 	}
 	return err;
-} 
+}
 
-static int gas_symlink(struct inode * dir, struct dentry *dentry,
-			const char * symname)
+// Soft link
+static int gas_symlink(struct inode *dir, struct dentry *dentry,
+					   const char *symname)
 {
 	int err = -ENAMETOOLONG;
-	int i = strlen(symname)+1;
-	struct inode * inode;
+	int i = strlen(symname) + 1;
+	struct inode *inode;
 
 	if (i > dir->i_sb->s_blocksize)
 		goto out;
@@ -131,8 +151,9 @@ out_fail:
 	goto out;
 }
 
-static int gas_link(struct dentry * old_dentry, struct inode * dir,
-			struct dentry *dentry)
+// hard link
+static int gas_link(struct dentry *old_dentry, struct inode *dir,
+					struct dentry *dentry)
 {
 	struct inode *inode = old_dentry->d_inode;
 
@@ -142,12 +163,13 @@ static int gas_link(struct dentry * old_dentry, struct inode * dir,
 	return add_nondir(dentry, inode);
 }
 
-static int gas_unlink(struct inode * dir, struct dentry *dentry)
+// unlink
+static int gas_unlink(struct inode *dir, struct dentry *dentry)
 {
 	int err = -ENOENT;
-	struct inode * inode = dentry->d_inode;
-	struct page * page;
-	struct gas_dir_entry * de;
+	struct inode *inode = dentry->d_inode;
+	struct page *page;
+	struct gas_dir_entry *de;
 
 	de = gas_find_entry(dentry, &page);
 	if (!de)
@@ -158,19 +180,25 @@ static int gas_unlink(struct inode * dir, struct dentry *dentry)
 		goto end_unlink;
 
 	inode->i_ctime = dir->i_ctime;
+
+	// decrease link count
 	inode_dec_link_count(inode);
 end_unlink:
 	return err;
 }
 
-static int gas_rmdir(struct inode * dir, struct dentry *dentry)
+static int gas_rmdir(struct inode *dir, struct dentry *dentry)
 {
-	struct inode * inode = dentry->d_inode;
+	struct inode *inode = dentry->d_inode;
 	int err = -ENOTEMPTY;
 
-	if (gas_empty_dir(inode)) {
+	// Only remove empty dir
+	if (gas_empty_dir(inode))
+	{
+		// free dentry
 		err = gas_unlink(dir, dentry);
-		if (!err) {
+		if (!err)
+		{
 			inode_dec_link_count(dir);
 			inode_dec_link_count(inode);
 		}
@@ -178,31 +206,33 @@ static int gas_rmdir(struct inode * dir, struct dentry *dentry)
 	return err;
 }
 
-static int gas_rename(struct inode * old_dir, struct dentry *old_dentry,
-			   struct inode * new_dir, struct dentry *new_dentry)
+static int gas_rename(struct inode *old_dir, struct dentry *old_dentry,
+					  struct inode *new_dir, struct dentry *new_dentry)
 {
-	struct inode * old_inode = old_dentry->d_inode;
-	struct inode * new_inode = new_dentry->d_inode;
-	struct page * dir_page = NULL;
-	struct gas_dir_entry * dir_de = NULL;
-	struct page * old_page;
-	struct gas_dir_entry * old_de;
+	struct inode *old_inode = old_dentry->d_inode;
+	struct inode *new_inode = new_dentry->d_inode;
+	struct page *dir_page = NULL;
+	struct gas_dir_entry *dir_de = NULL;
+	struct page *old_page;
+	struct gas_dir_entry *old_de;
 	int err = -ENOENT;
 
 	old_de = gas_find_entry(old_dentry, &old_page);
 	if (!old_de)
 		goto out;
 
-	if (S_ISDIR(old_inode->i_mode)) {
+	if (S_ISDIR(old_inode->i_mode))
+	{
 		err = -EIO;
 		dir_de = gas_dotdot(old_inode, &dir_page);
 		if (!dir_de)
 			goto out_old;
 	}
 
-	if (new_inode) {
-		struct page * new_page;
-		struct gas_dir_entry * new_de;
+	if (new_inode)
+	{
+		struct page *new_page;
+		struct gas_dir_entry *new_de;
 
 		err = -ENOTEMPTY;
 		if (dir_de && !gas_empty_dir(new_inode))
@@ -217,7 +247,9 @@ static int gas_rename(struct inode * old_dir, struct dentry *old_dentry,
 		if (dir_de)
 			drop_nlink(new_inode);
 		inode_dec_link_count(new_inode);
-	} else {
+	}
+	else
+	{
 		err = gas_add_link(new_dentry, old_inode);
 		if (err)
 			goto out_dir;
@@ -228,14 +260,16 @@ static int gas_rename(struct inode * old_dir, struct dentry *old_dentry,
 	gas_delete_entry(old_de, old_page);
 	mark_inode_dirty(old_inode);
 
-	if (dir_de) {
+	if (dir_de)
+	{
 		gas_set_link(dir_de, dir_page, new_dir);
 		inode_dec_link_count(old_dir);
 	}
 	return 0;
 
 out_dir:
-	if (dir_de) {
+	if (dir_de)
+	{
 		kunmap(dir_page);
 		page_cache_release(dir_page);
 	}
@@ -246,6 +280,7 @@ out:
 	return err;
 }
 
+// 
 int gas_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 {
 	struct super_block *sb = dentry->d_sb;
@@ -256,27 +291,29 @@ int gas_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 	return 0;
 }
 
+// operations for a file inode
 const struct inode_operations gas_file_inode_ops = {
-	.getattr		= gas_getattr,
+	.getattr = gas_getattr,
 };
 
+// operations for a link inode
 const struct inode_operations gas_symlink_inode_ops = {
-	.readlink		= generic_readlink,
-	.follow_link		= page_follow_link_light,
-	.put_link		= page_put_link,
-	.getattr		= gas_getattr,
+	.readlink = generic_readlink,
+	.follow_link = page_follow_link_light,
+	.put_link = page_put_link,
+	.getattr = gas_getattr,
 };
 
+// operations for a directroy inode
 const struct inode_operations gas_dir_inode_ops = {
-	.create		= gas_create,
-	.lookup		= gas_lookup,
-	.link		= gas_link,
-	.unlink		= gas_unlink,
-	.symlink	= gas_symlink,
-	.mknod		= gas_mknod,
-	.mkdir		= gas_mkdir,
-	.rmdir		= gas_rmdir,
-	.rename		= gas_rename,
-	.getattr	= gas_getattr,
+	.create = gas_create,
+	.lookup = gas_lookup,
+	.link = gas_link,
+	.unlink = gas_unlink,
+	.symlink = gas_symlink,
+	.mknod = gas_mknod,
+	.mkdir = gas_mkdir,
+	.rmdir = gas_rmdir,
+	.rename = gas_rename,
+	.getattr = gas_getattr,
 };
-
