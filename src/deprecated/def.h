@@ -1,9 +1,6 @@
 #ifndef __DEF_H__
 #define __DEF_H__
 
-#define GAS_MAX_NAME_LEN 256
-#define GAS_BLOCK_SIZE 4096 // byte
-#define MAGIC_NUMBER 0x6A5000F5
 
 #include <linux/fs.h>
 #include <linux/init.h>

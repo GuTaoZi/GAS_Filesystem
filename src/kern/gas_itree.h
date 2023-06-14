@@ -1,3 +1,6 @@
+#ifndef __GAS_ITREE_H__
+#define __GAS_ITREE_H__
+
 #include <linux/buffer_head.h>
 
 #define block_to_cpu le32_to_cpu
@@ -21,7 +24,7 @@ enum
 }; /* Have triple indirect */
 
 DEFINE_RWLOCK(pointers_lock);
-
+/*
 int block_to_path(struct inode *, long, int[DEPTH]);
 
 block_t *i_data(struct inode *inode);
@@ -51,9 +54,11 @@ void free_branches(struct inode *, block_t *, block_t *, int);
 void truncate(struct inode *);
 
 unsigned nblocks(loff_t, struct super_block *);
-
+*/
 unsigned gas_blocks(loff_t, struct super_block *);
 
 void gas_truncate_inode(struct inode *);
 
 int gas_get_block(struct inode *, sector_t, struct buffer_head *, int);
+
+#endif
