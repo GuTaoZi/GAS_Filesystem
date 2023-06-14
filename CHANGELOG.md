@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2023-06-14
+
+### Added
+
+- A complete C project structure with headers
+
+### Changed
+
+- Update some documents and the report
+
+## [0.2.1] - 2023-06-12
+
+### Changed
+
+- Some slight modifications in source files
+
+## [0.2.0] - 2023-06-09
+
+### Added
+
+- Bitmap functions of Linux kernel
+- Load and remove kernel module script
+
+### Changed
+
+- Change the develop environment to `Linux 3.13.170 generic`
+- Make the file system initializer more complete
+
+## [0.1.1] - 2023-05-30
+
+### Added
+
+- Project midterm report
+
+### Fixed
+
+- Some bugs in file system initializer
+- Some bugs of cannot mount and initialize virtual disk
+
+## [0.1.0] - 2023-05-14
+
+### Added
+
+- Main structure of file system
+- A naïve file system maker 
+- Mount virtual disk script
+
+## [0.0.3] - 2023-05-04
+
+### Added
+
+- First kernel module
+- Design of file system layout
+
 ## [0.0.2] - 2023-04-14
 
 ### Added

@@ -31,8 +31,6 @@ struct filesys_param
 
 static void init_super_block()
 {
-    // char buffer[SFS_BLOCK_SIZE];
-    // memset(buffer, 0, SFS_BLOCK_SIZE);
     printf("GAS: Initializing super block ...\n");
     char *buffer = (char *)malloc(SFS_BLOCK_SIZE);
     memset(buffer, 0, SFS_BLOCK_SIZE);
