@@ -6,6 +6,12 @@
 #include <linux/writeback.h>
 
 /* User interfaces*/
+static inline sector_t gas_inode_block(struct gas_sb_info const *sbi, ino_t ino)
+{
+	return (sector_t)(sbi->s_inode_list_start + 
+		ino / sbi->s_inodes_per_block);
+}
+
 struct gas_inode *gas_get_inode(struct super_block *sb, ino_t ino, struct buffer_head **p)
 {
     struct gas_sb_info *sb_info = sb->s_fs_info;
@@ -16,6 +22,35 @@ struct gas_inode *gas_get_inode(struct super_block *sb, ino_t ino, struct buffer
     if (!*p)
         return NULL;
     return (struct gas_inode *)((*p)->b_data + offset);
+}
+
+void gas_truncate(struct inode * inode)
+{
+	if (!(S_ISREG(inode->i_mode) || 
+		S_ISDIR(inode->i_mode) || S_ISLNK(inode->i_mode)))
+		return;
+	gas_truncate_inode(inode);
+}
+
+void gas_set_inode(struct inode *inode, dev_t rdev)
+{
+	inode->i_mapping->a_ops = &gas_a_ops;
+	if (S_ISREG(inode->i_mode))
+    {
+		inode->i_op = &gas_file_inode_ops;
+		inode->i_fop = &gas_file_ops;
+	}
+    else if (S_ISDIR(inode->i_mode))
+    {
+		inode->i_op = &gas_dir_inode_ops;
+		inode->i_fop = &gas_dir_ops;
+	}
+    else if (S_ISLNK(inode->i_mode))
+		inode->i_op = &gas_symlink_inode_ops;
+	else { 
+		inode->i_mapping->a_ops = NULL;
+		init_special_inode(inode, inode->i_mode, rdev);
+	}
 }
 
 int gas_write_inode(struct inode *inode, struct writeback_control *ctrl)
@@ -86,7 +121,7 @@ int gas_write_inode(struct inode *inode, struct writeback_control *ctrl)
     return err;
 }
 
-void sfs_evict_inode(struct inode *inode)
+void gas_evict_inode(struct inode *inode)
 {
     truncate_inode_pages(&inode->i_data, 0);
 	if (!inode->i_nlink) {
@@ -99,4 +134,53 @@ void sfs_evict_inode(struct inode *inode)
 		gas_free_inode(inode); // in bitmap.c
 }
 
+static void gas_inode_fill(struct gas_inode_info *info,
+			struct gas_inode const *gnode)
+{
+	int i;
+
+	info->inode.i_mode = le16_to_cpu(gnode->i_mode);
+	info->inode.i_infoze = le32_to_cpu(gnode->i_size);
+	info->inode.i_ctime.tv_sec = le32_to_cpu(gnode->i_ctime);
+	info->inode.i_atime.tv_sec = le32_to_cpu(gnode->i_atime);
+	info->inode.i_mtime.tv_sec = le32_to_cpu(gnode->i_mtime);
+	info->inode.i_mtime.tv_nsec = info->inode.i_atime.tv_nsec =
+				info->inode.i_ctime.tv_nsec = 0;
+	i_uid_write(&info->inode, (uid_t)le32_to_cpu(gnode->i_uid));
+	i_gid_write(&info->inode, (gid_t)le32_to_cpu(gnode->i_gid));
+	set_nlink(&info->inode, le16_to_cpu(gnode->i_nlink));
+	for (i = 0; i < 9; i++) 
+		info->blkaddr[i] = gnode->i_blkaddr[i];
+}
+
+struct inode *gas_iget(struct super_block *sb, ino_t ino)
+{
+	struct gas_sb_info *sb_info = GAS_SB(sb);
+	struct buffer_head *bh;
+	struct gas_inode *gnode;
+	struct gas_inode_info *info;
+	struct inode *inode;
+	size_t block, offset;
+	inode = iget_locked(sb, ino);
+	if (!inode)
+		return ERR_PTR(-ENOMEM);
+	if (!(inode->i_state & I_NEW))
+		return inode;
+	info = GAS_INODE(inode);
+	block = gas_inode_block(sb_info, ino);
+	offset = gas_inode_offset(sb_info, ino);
+	bh = sb_bread(sb, block);
+	if (!bh)
+		goto read_error;
+	gnode = (struct gas_inode *)(bh->b_data + offset);
+	gas_inode_fill(info, gnode);
+	brelse(bh);
+	gas_set_inode(inode, new_decode_dev(le32_to_cpu(info->blkaddr[0]))); 
+	unlock_new_inode(inode);
+	return inode;
+
+read_error:
+	iget_failed(inode);
+	return ERR_PTR(-EIO);
+}
 

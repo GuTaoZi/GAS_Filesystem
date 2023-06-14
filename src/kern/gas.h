@@ -130,7 +130,7 @@ static struct super_operations const gas_super_ops = {
     .statfs = gas_statfs,
 };
 
-const struct address_space_operations gas_address_ops = {
+const struct address_space_operations gas_a_ops = {
     .readpage = gas_readpage,
     .readpages = gas_readpages,
     .writepage = gas_writepage,
