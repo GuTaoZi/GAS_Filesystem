@@ -1,6 +1,6 @@
 #include <linux/fs.h>
 
-const struct file_operations sfs_file_ops = {
+const struct file_operations gas_file_ops = {
 	.llseek = generic_file_llseek,
 	.read = do_sync_read,
 	.aio_read = generic_file_aio_read,

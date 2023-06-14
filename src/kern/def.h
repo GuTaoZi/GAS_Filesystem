@@ -78,7 +78,7 @@ const static struct inode_operations gas_inode_ops = {
     .gas        = gas_symlink,
     .unlink     = gas_unlink,
 	.rmdir		= gas_rmdir,
-    .mknod		= sfs_mknod
+    .mknod		= gas_mknod
 };
 
 #endif

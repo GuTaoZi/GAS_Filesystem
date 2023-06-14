@@ -52,15 +52,15 @@ void gas_destroy_inode(struct inode *inode)
 static int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs)
 {
 	struct super_block *sb = dentry->d_sb;
-	struct sfs_sb_info *sb_info = sb->s_sf_info;
+	struct gas_sb_info *sb_info = sb->s_sf_info;
 	u64 id = huge_encode_dev(sb->s_bdev->bd_dev);
 	buf->f_type = sb->s_magic;
 	buf->f_bsize = sb->s_blocksize;
 	buf->f_blocks = sb_info->s_nblocks - sb_info->s_data_block_start;
-	buf->f_bfree = sfs_count_free_blocks(sb);
+	buf->f_bfree = gas_count_free_blocks(sb);
 	buf->f_bavail = buf->f_bfree;
 	buf->f_files = sb_info->s_ninodes;
-	buf->f_ffree = sfs_count_free_inodes(sb);
+	buf->f_ffree = gas_count_free_inodes(sb);
 	buf->f_namelen = GAS_MAX_NAME_LEN;
 	buf->f_fsid.val[0] = (u32)id;
 	buf->f_fsid.val[1] = (u32)(id>>32);
