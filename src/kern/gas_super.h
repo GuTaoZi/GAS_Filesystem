@@ -9,46 +9,46 @@
 #include <linux/vfs.h>
 
 // Global Variable
-static struct kmem_cache *sfs_inode_cache;
+static struct kmem_cache *gas_inode_cache;
 
-static struct super_operations const sfs_super_ops = {
-	.alloc_inode		= sfs_alloc_inode,
-	.destroy_inode		= sfs_destroy_inode,
-	.write_inode		= sfs_write_inode,
-	.evict_inode		= sfs_evict_inode,
-	.put_super		= sfs_put_super,
-	.statfs			= sfs_statfs,
+static struct super_operations const gas_super_ops = {
+	.alloc_inode		= gas_alloc_inode,
+	.destroy_inode		= gas_destroy_inode,
+	.write_inode		= gas_write_inode,
+	.evict_inode		= gas_evict_inode,
+	.put_super		= gas_put_super,
+	.statfs			= gas_statfs,
 };
 
 // Function Declaration
-void sfs_put_super(struct super_block *);
+void gas_put_super(struct super_block *);
 
-void sfs_super_block_fill(struct sfs_sb_info *, struct sfs_super_block const *);
+void gas_super_block_fill(struct gas_sb_info *, struct gas_super_block const *);
 
-static struct sfs_sb_info *sfs_super_block_read(struct super_block *);
+static struct gas_sb_info *gas_super_block_read(struct super_block *);
 
-static int sfs_statfs(struct dentry *, struct kstatfs *);
+static int gas_statfs(struct dentry *, struct kstatfs *);
 
-struct inode *sfs_alloc_inode(struct super_block *);
+struct inode *gas_alloc_inode(struct super_block *);
 
-void sfs_destroy_callback(struct rcu_head *);
+void gas_destroy_callback(struct rcu_head *);
 
-void sfs_destroy_inode(struct inode *);
+void gas_destroy_inode(struct inode *);
 
-void sfs_inode_init_once(void *);
+void gas_inode_init_once(void *);
 
-int sfs_inode_cache_create(void);
+int gas_inode_cache_create(void);
 
-void sfs_inode_cache_destroy(void);
+void gas_inode_cache_destroy(void);
 
-int sfs_fill_super(struct super_block *, void *, int);
+int gas_fill_super(struct super_block *, void *, int);
 
-struct dentry *sfs_mount(struct file_system_type *, int, char const *, void *);
+struct dentry *gas_mount(struct file_system_type *, int, char const *, void *);
 
-static int __init init_sfs_fs(void);
+static int __init init_gas_fs(void);
 
-static void __exit exit_sfs_fs(void);
+static void __exit exit_gas_fs(void);
 
 // Micro Bonding
-module_init(init_sfs_fs);
-module_exit(exit_sfs_fs); 
+module_init(init_gas_fs);
+module_exit(exit_gas_fs); 

@@ -48,8 +48,8 @@ void truncate(struct inode *);
 
 unsigned nblocks(loff_t, struct super_block *);
 
-unsigned sfs_blocks(loff_t, struct super_block *);
+unsigned gas_blocks(loff_t, struct super_block *);
 
-void sfs_truncate_inode(struct inode *);
+void gas_truncate_inode(struct inode *);
 
-int sfs_get_block(struct inode *, sector_t, struct buffer_head *, int);
+int gas_get_block(struct inode *, sector_t, struct buffer_head *, int);
