@@ -11,7 +11,7 @@
 // Global Variable
 static struct kmem_cache *gas_inode_cache;
 
-static struct inode *gas_alloc_inode(struct super_block *sb)
+struct inode *gas_alloc_inode(struct super_block *sb)
 {
     // 在cache里申请一个node_info
     struct gas_inode_info *info = (struct gas_inode_info *)kmem_cache_alloc(gas_inode_cache, GFP_KERNEL);
@@ -28,7 +28,7 @@ void gas_destroy_callback(struct rcu_head *head)
 
 void gas_destroy_inode(struct inode *inode)
 {
-    call_rcu(&inode->i_rcu, gas_destroy_callback)
+    call_rcu(&inode->i_rcu, gas_destroy_callback);
 }
 
 // void gas_put_super(struct super_block *sb)
@@ -48,10 +48,10 @@ void gas_destroy_inode(struct inode *inode)
 // }
 
 // 暂时看不懂
-int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs)
+int gas_statfs(struct dentry *dentry, struct kstatfs *buf)
 {
     struct super_block *sb = dentry->d_sb;
-    struct gas_sb_info *sb_info = sb->s_sf_info;
+    struct gas_sb_info *sb_info = sb->s_fs_info;
     u64 id = huge_encode_dev(sb->s_bdev->bd_dev);
     buf->f_type = sb->s_magic;
     buf->f_bsize = sb->s_blocksize;
