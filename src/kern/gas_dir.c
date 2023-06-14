@@ -1,7 +1,7 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
-#include <linux/string.h>
 #include <linux/pagemap.h>
+#include <linux/string.h>
 
 #include "gas.h"
 
@@ -69,8 +69,7 @@ static void gas_dir_put_page(struct page *page)
     put_page(page); // same as calling page_cache_release(page);
 }
 
-static int gas_dir_emit(struct dir_context *ctx,
-                        struct gas_dir_entry *de)
+static int gas_dir_emit(struct dir_context *ctx, struct gas_dir_entry *de)
 {
     unsigned type = DT_UNKNOWN;
     unsigned len = strlen(de->de_name);
@@ -96,9 +95,7 @@ static int gas_iterate(struct inode *inode, struct dir_context *ctx)
 
         if (IS_ERR(page))
         {
-            pr_err("cannot access page %lu in %lu",
-                   (unsigned long)pidx,
-                   (unsigned long)inode->i_ino);
+            pr_err("cannot access page %lu in %lu", (unsigned long)pidx, (unsigned long)inode->i_ino);
             return PTR_ERR(page);
         }
 
@@ -126,9 +123,7 @@ static int gas_readdir(struct file *file, struct dir_context *ctx)
 }
 
 const struct file_operations gas_dir_ops = {
-    .llseek = generic_file_llseek,
-    .read = generic_read_dir,
-    .iterate = gas_readdir,
+    .llseek = generic_file_llseek, .read = generic_read_dir, .iterate = gas_readdir,
     //	.fsync = generic_file_fsync,
 };
 
@@ -140,8 +135,7 @@ struct gas_filename_match
     int len;
 };
 
-static int gas_match(void *ctx, const char *name, int len,
-                     loff_t off, u64 ino, unsigned type)
+static int gas_match(void *ctx, const char *name, int len, loff_t off, u64 ino, unsigned type)
 {
     struct gas_filename_match *match = (struct gas_filename_match *)ctx;
 
@@ -262,8 +256,7 @@ fail:
  * itself (as a parameter - res_dir). It does NOT read the inode of the
  * entry - you'll have to do that yourself if you want to.
  */
-struct gas_dir_entry *
-gas_find_entry(struct dentry *dentry, struct page **res_page)
+struct gas_dir_entry *gas_find_entry(struct dentry *dentry, struct page **res_page)
 {
     const char *name = dentry->d_name.name;
     // int namelen = dentry->d_name.len;
@@ -375,12 +368,10 @@ not_empty:
 }
 
 /* Releases the page */
-void gas_set_link(struct gas_dir_entry *de, struct page *page,
-                  struct inode *inode)
+void gas_set_link(struct gas_dir_entry *de, struct page *page, struct inode *inode)
 {
     struct inode *dir = page->mapping->host;
-    loff_t pos = page_offset(page) +
-                 (char *)de - (char *)page_address(page);
+    loff_t pos = page_offset(page) + (char *)de - (char *)page_address(page);
     int err;
 
     lock_page(page);
@@ -388,8 +379,7 @@ void gas_set_link(struct gas_dir_entry *de, struct page *page,
     err = gas_dir_prepare_chunk(page, pos, sizeof(struct gas_dir_entry));
     if (err == 0)
     {
-        err = gas_dir_commit_chunk(page, pos,
-                                   sizeof(struct gas_dir_entry));
+        err = gas_dir_commit_chunk(page, pos, sizeof(struct gas_dir_entry));
     }
     else
     {
@@ -407,8 +397,7 @@ struct gas_dir_entry *gas_dotdot(struct inode *dir, struct page **p)
 
     if (!IS_ERR(page))
     {
-        de = (struct gas_dir_entry *)((char *)page_address(page) +
-                                      sizeof(struct gas_dir_entry));
+        de = (struct gas_dir_entry *)((char *)page_address(page) + sizeof(struct gas_dir_entry));
         *p = page;
     }
     return de;
@@ -416,11 +405,7 @@ struct gas_dir_entry *gas_dotdot(struct inode *dir, struct page **p)
 
 ino_t gas_inode_by_name(struct inode *dir, struct qstr *child)
 {
-    struct gas_filename_match match = {
-        .ctx = {&gas_match, 0},
-        .ino = 0,
-        .name = child->name,
-        .len = child->len};
+    struct gas_filename_match match = {.ctx = {&gas_match, 0}, .ino = 0, .name = child->name, .len = child->len};
 
     int err = gas_iterate(dir, &match.ctx);
 
