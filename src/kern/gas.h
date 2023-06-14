@@ -1,7 +1,11 @@
 #ifndef __GAS_H__
 #define __GAS_H__
 
+#include "bitmap.h"
 #include "def.h"
+#include "gas_dir.h"
+#include "gas_file.h"
+#include "gas_namei.h"
 
 #include <linux/fs.h>
 #include <linux/types.h>
