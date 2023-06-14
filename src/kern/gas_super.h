@@ -7,48 +7,29 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/vfs.h>
+#include "gas.h"
 
-// Global Variable
-static struct kmem_cache *gas_inode_cache;
+static struct file_system_type gas_fs_type = {
+    .owner = THIS_MODULE, .name = "gas", .mount = gas_mount, .kill_sb = kill_block_super, .fs_flags = FS_REQUIRES_DEV};
 
-static struct super_operations const gas_super_ops = {
-    .alloc_inode = gas_alloc_inode,
-    .destroy_inode = gas_destroy_inode,
-    .write_inode = gas_write_inode,
-    .evict_inode = gas_evict_inode,
-    .put_super = gas_put_super,
-    .statfs = gas_statfs,
-};
+static int __init init_gas_fs(void)
+{
+    printk(KERN_INFO "GAS File Sysem Initialized.\n");
+    printk(KERN_INFO "Made by GuTao, Artanisax, ShadowStorm.\n");
+    return register_filesystem(&gas_fs_type);
+}
 
-// Function Declaration
-void gas_put_super(struct super_block *);
-
-void gas_super_block_fill(struct gas_sb_info *, struct gas_super_block const *);
-
-static struct gas_sb_info *gas_super_block_read(struct super_block *);
-
-static int gas_statfs(struct dentry *, struct kstatfs *);
-
-struct inode *gas_alloc_inode(struct super_block *);
-
-void gas_destroy_callback(struct rcu_head *);
-
-void gas_destroy_inode(struct inode *);
-
-void gas_inode_init_once(void *);
-
-int gas_inode_cache_create(void);
-
-void gas_inode_cache_destroy(void);
-
-int gas_fill_super(struct super_block *, void *, int);
-
-struct dentry *gas_mount(struct file_system_type *, int, char const *, void *);
-
-static int __init init_gas_fs(void);
-
-static void __exit exit_gas_fs(void);
+static void __exit exit_gas_fs(void)
+{
+    unregister_filesystem(&gas_fs_type);
+    printk(KERN_INFO "GAS File Sysem Exited.\n");
+}
 
 // Micro Bonding
 module_init(init_gas_fs);
 module_exit(exit_gas_fs);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("gas file system");
+
+#endif

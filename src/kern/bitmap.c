@@ -16,7 +16,7 @@
 #include <linux/buffer_head.h>
 #include <linux/sched.h>
 
-#include "bitmap.h"
+#include "gas.h"
 
 static DEFINE_SPINLOCK(bitmap_lock);
 
@@ -44,7 +44,7 @@ static __u32 count_free(struct buffer_head *map[], unsigned blocksize, __u32 num
 void gas_free_block(struct inode *inode, unsigned long block)
 {
     struct super_block *sb = inode->i_sb;
-    struct gas_sb_info *sbi = gas_SB(sb);
+    struct gas_sb_info *sbi = GAS_SB(sb);
     struct buffer_head *bh;
     int k = sb->s_blocksize_bits + 3;
     unsigned long bit, idx;
@@ -73,7 +73,7 @@ void gas_free_block(struct inode *inode, unsigned long block)
 unsigned long gas_new_block(struct inode *inode, int *err)
 {
     struct super_block *sb = inode->i_sb;
-    struct gas_sb_info *sbi = gas_SB(sb);
+    struct gas_sb_info *sbi = GAS_SB(sb);
     unsigned long block;
     int i;
 
@@ -102,7 +102,7 @@ unsigned long gas_new_block(struct inode *inode, int *err)
 
 unsigned long gas_count_free_blocks(struct super_block *sb)
 {
-    struct gas_sb_info *sbi = gas_SB(sb);
+    struct gas_sb_info *sbi = GAS_SB(sb);
     u32 bits = sbi->s_nblocks - sbi->s_data_block_start + 1;
 
     return count_free(sbi->s_bam_bh, sb->s_blocksize, bits);
@@ -132,7 +132,7 @@ static void gas_clear_inode(struct inode *inode)
 void gas_free_inode(struct inode *inode)
 {
     struct super_block *sb = inode->i_sb;
-    struct gas_sb_info *sbi = gas_SB(inode->i_sb);
+    struct gas_sb_info *sbi = GAS_SB(inode->i_sb);
     struct buffer_head *bh;
     int k = sb->s_blocksize_bits + 3;
     unsigned long ino, bit;
@@ -164,7 +164,7 @@ void gas_free_inode(struct inode *inode)
 struct inode *gas_new_inode(struct inode *dir, umode_t mode, int *err)
 {
     struct super_block *sb = dir->i_sb;
-    struct gas_sb_info *sbi = gas_SB(sb);
+    struct gas_sb_info *sbi = GAS_SB(sb);
     struct inode *inode;
     unsigned long ino;
     struct gas_inode_info *si;
@@ -201,7 +201,7 @@ struct inode *gas_new_inode(struct inode *dir, umode_t mode, int *err)
     return NULL;
 
 got_it:
-    si = gas_INODE(inode);
+    si = GAS_INODE(inode);
     memset((char *)&si->blkaddr, 0, 9 * sizeof(__le32));
 
     inode_init_owner(inode, dir, mode);
@@ -217,7 +217,7 @@ got_it:
 
 unsigned long gas_count_free_inodes(struct super_block *sb)
 {
-    struct gas_sb_info *sbi = gas_SB(sb);
+    struct gas_sb_info *sbi = GAS_SB(sb);
     u32 bits = sbi->s_ninodes + 1;
 
     return count_free(sbi->s_iam_bh, sb->s_blocksize, bits);

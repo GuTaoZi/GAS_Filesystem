@@ -1,7 +1,6 @@
 #include <linux/fs.h>
 
 #include "gas.h"
-#include "gas_namei.h"
 
 // add a file (non-dir)
 static int add_nondir(struct dentry *dentry, struct inode *inode)
@@ -86,7 +85,7 @@ struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry, unsigned fla
     struct inode *inode = NULL;
     ino_t ino;
 
-    if (dentry->d_name.len >= gas_MAX_NAME_LEN)
+    if (dentry->d_name.len >= GAS_MAX_NAME_LEN)
         return ERR_PTR(-ENAMETOOLONG);
 
     // Find the inode

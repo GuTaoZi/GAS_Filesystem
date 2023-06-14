@@ -8,6 +8,7 @@
 
 #include "gas.h"
 
+// Global Variable
 static struct kmem_cache *gas_inode_cache;
 
 static struct inode *gas_alloc_inode(struct super_block *sb)
@@ -47,7 +48,7 @@ void gas_destroy_inode(struct inode *inode)
 // }
 
 // 暂时看不懂
-static int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs)
+int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs)
 {
     struct super_block *sb = dentry->d_sb;
     struct gas_sb_info *sb_info = sb->s_sf_info;

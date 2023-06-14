@@ -186,7 +186,7 @@ int gas_add_link(struct dentry *dentry, struct inode *inode)
             if (!le32_to_cpu(de->de_inode))
                 goto got_it;
             err = -EEXIST;
-            if (strncmp(de->de_name, name, gas_MAX_NAME_LEN - 1) == 0)
+            if (strncmp(de->de_name, name, GAS_MAX_NAME_LEN - 1) == 0)
                 goto out_unlock;
         }
         unlock_page(page);
@@ -200,8 +200,8 @@ got_it:
     err = gas_dir_prepare_chunk(page, pos, sizeof(struct gas_dir_entry));
     if (err)
         goto out_unlock;
-    strncpy(de->de_name, name, gas_MAX_NAME_LEN - 1);
-    de->de_name[gas_MAX_NAME_LEN - 1] = '\0';
+    strncpy(de->de_name, name, GAS_MAX_NAME_LEN - 1);
+    de->de_name[GAS_MAX_NAME_LEN - 1] = '\0';
     de->de_inode = cpu_to_le32(inode->i_ino);
     err = gas_dir_commit_chunk(page, pos, sizeof(struct gas_dir_entry));
     dir->i_mtime = dir->i_ctime = CURRENT_TIME_SEC;
@@ -284,7 +284,7 @@ struct gas_dir_entry *gas_find_entry(struct dentry *dentry, struct page **res_pa
             struct gas_dir_entry *de = (struct gas_dir_entry *)p;
             if (!le32_to_cpu(de->de_inode))
                 continue;
-            if (!strncmp(de->de_name, name, gas_MAX_NAME_LEN))
+            if (!strncmp(de->de_name, name, GAS_MAX_NAME_LEN))
                 goto found;
         }
         gas_dir_put_page(page);

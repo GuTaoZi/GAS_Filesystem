@@ -2,6 +2,7 @@
 #define __GAS_NAMEI_H__
 
 #include <linux/fs.h>
+// #include "gas.h"
 
 int gas_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t rdev);
 int gas_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode);
