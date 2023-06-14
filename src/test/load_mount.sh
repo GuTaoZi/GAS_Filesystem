@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # load kernel module
-insmod ../kernel/sfs.ko
+insmod ../kern/gasfs.ko
 
-# mount sfs using loopback 
-mount -o loop -t sfs vdisk /mnt
-ls -al /mnt
+# mount gasfs using loopback 
+mount -o loop -t gasfs vdisk /mnt/gas
+ls -al /mnt/gas
 

@@ -1,5 +1,5 @@
 #!/bin/sh
 
-umount /mnt
-rmmod sfs
+umount /mnt/gas
+rmmod gasfs
 
