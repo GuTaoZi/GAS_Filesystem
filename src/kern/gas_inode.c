@@ -69,6 +69,34 @@ struct buffer_head *gas_update_inode(struct inode *inode)
     return bh;
 }
 
+int gas_write_inode(struct inode *inode, struct writeback_control *ctrl)
+{
+    int err = 0;
+    struct buffer_head *bh = gas_update_inode(inode);
+    if (!bh)
+        return -EIO;
+    // 缓冲头请求写回并且并由于写入失败变成不被更新的状态
+    if (ctrl->sync_mode == WB_SYNC_ALL && buffer_dirty(bh))
+    {
+        sync_dirty_buffer(hb);
+        if (buffer_req(bh) && !buffer_uptodate(bh))
+            err = -EIO;
+    }
+    brelas(bh);
+    return err;
+}
+
 void sfs_evict_inode(struct inode *inode)
 {
+    truncate_inode_pages(&inode->i_data, 0);
+	if (!inode->i_nlink) {
+		inode->i_size = 0;
+		gas_truncate(inode);
+	}
+	invalidate_inode_buffers(inode);
+	clear_inode(inode);
+	if (!inode->i_nlink)
+		gas_free_inode(inode); // in bitmap.c
 }
+
+

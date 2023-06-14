@@ -98,7 +98,6 @@ void gas_write_failed(struct address_space *, loff_t);
 int gas_write_begin(struct file *, struct address_space *, loff_t, unsigned, unsigned, struct page **, void **);
 int gas_write_end(struct file *, struct address_space *, loff_t, unsigned, unsigned, struct page *, void *);
 sector_t gas_bmap(struct address_space *, sector_t);
-// Function Declaration
 void gas_put_super(struct super_block *);
 void gas_super_block_fill(struct gas_sb_info *, struct gas_super_block const *);
 struct inode *gas_alloc_inode(struct super_block *);
@@ -110,14 +109,7 @@ void gas_inode_cache_destroy(void);
 int gas_fill_super(struct super_block *, void *, int);
 struct dentry *gas_mount(struct file_system_type *, int, char const *, void *);
 int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs);
-static struct super_operations const gas_super_ops = {
-    .alloc_inode = gas_alloc_inode,
-    .destroy_inode = gas_destroy_inode,
-    .write_inode = gas_write_inode,
-    .evict_inode = gas_evict_inode,
-    .put_super = gas_put_super,
-    .statfs = gas_statfs,
-};
+
 
 static inline struct gas_sb_info *GAS_SB(struct super_block *sb)
 {
@@ -129,23 +121,36 @@ static inline struct gas_inode_info *GAS_INODE(struct inode *inode)
 	return container_of(inode, struct gas_inode_info, inode);
 }
 
+static struct super_operations const gas_super_ops = {
+    .alloc_inode = gas_alloc_inode,
+    .destroy_inode = gas_destroy_inode,
+    .write_inode = gas_write_inode,
+    .evict_inode = gas_evict_inode,
+    .put_super = gas_put_super,
+    .statfs = gas_statfs,
+};
 
-const struct address_space_operations gas_aops = {.readpage = gas_readpage,
-                                                  .readpages = gas_readpages,
-                                                  .writepage = gas_writepage,
-                                                  .writepages = gas_writepages,
-                                                  .write_begin = gas_write_begin,
-                                                  .write_end = gas_write_end,
-                                                  .bmap = gas_bmap,
-                                                  .direct_IO = gas_direct_io};
-const struct file_operations gas_file_ops = {.llseek = generic_file_llseek,
-                                             .read = do_sync_read,
-                                             .aio_read = generic_file_aio_read,
-                                             .write = do_sync_write,
-                                             .aio_write = generic_file_aio_write,
-                                             .mmap = generic_file_mmap,
-                                             .splice_read = generic_file_splice_read,
-                                             .splice_write = generic_file_splice_write};
+const struct address_space_operations gas_address_ops = {
+    .readpage = gas_readpage,
+    .readpages = gas_readpages,
+    .writepage = gas_writepage,
+    .writepages = gas_writepages,
+    .write_begin = gas_write_begin,
+    .write_end = gas_write_end,
+    .bmap = gas_bmap,
+    .direct_IO = gas_direct_io
+};
+
+const struct file_operations gas_file_ops = {
+    .llseek = generic_file_llseek,
+    .read = do_sync_read,
+    .aio_read = generic_file_aio_read,
+    .write = do_sync_write,
+    .aio_write = generic_file_aio_write,
+    .mmap = generic_file_mmap,
+    .splice_read = generic_file_splice_read,
+    .splice_write = generic_file_splice_write
+};
 
 #include "gas_namei.h"
 #include "gas_itree.h"
