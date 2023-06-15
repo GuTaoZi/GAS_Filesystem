@@ -15,14 +15,15 @@ static struct kmem_cache *gas_inode_cache;
 
 static void gas_inode_init_once(void *p)
 {
-    // 提供给内核用的
+    // Initialize the gas_inode_info structure
+    // p is a pointer to a gas_inode_info structure
     struct gas_inode_info *info = (struct gas_inode_info *)p;
     inode_init_once(&(info->inode));
 }
 
 static int gas_inode_cache_create(void)
 {
-    // 为inode_info申请缓存
+    // Create a cache for inode_info structures
     gas_inode_cache = kmem_cache_create("gas_inode", sizeof(struct gas_inode_info), 0,
                                         (SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD), gas_inode_init_once);
     if (gas_inode_cache == NULL)
@@ -32,6 +33,7 @@ static int gas_inode_cache_create(void)
 
 static void gas_inode_cache_destroy(void)
 {
+    // Destroy the inode_info cache
     rcu_barrier();
     kmem_cache_destroy(gas_inode_cache);
     gas_inode_cache = NULL;
@@ -39,6 +41,7 @@ static void gas_inode_cache_destroy(void)
 
 static inline void gas_super_block_fill(struct gas_sb_info *sbi, struct gas_super_block const *dsb)
 {
+    // Fill the gas_sb_info structure with data from the gas_super_block
     sbi->s_magic = le32_to_cpu(dsb->s_magic);
     sbi->s_blocksize = le32_to_cpu(dsb->s_blocksize);
     sbi->s_bam_blocks = le32_to_cpu(dsb->s_bam_blocks);
@@ -55,6 +58,7 @@ static inline void gas_super_block_fill(struct gas_sb_info *sbi, struct gas_supe
 
 static struct gas_sb_info *gas_super_block_read(struct super_block *sb)
 {
+    // Read the gas_super_block from the disk and fill the gas_sb_info structure
     struct gas_sb_info *sbi = (struct gas_sb_info *)kzalloc(sizeof(struct gas_sb_info), GFP_NOFS);
     struct gas_super_block *dsb;
     struct buffer_head *bh;
@@ -91,6 +95,7 @@ free_memory:
 
 static int gas_fill_super(struct super_block *sb, void *data, int silent)
 {
+    // Fill the super_block structure with data from gas_sb_info and initialize gas_fs_type
     struct gas_sb_info *sbi = gas_super_block_read(sb);
     struct buffer_head **map;
     struct inode *root;
@@ -162,6 +167,7 @@ error:
 
 static struct dentry *gas_mount(struct file_system_type *type, int flags, char const *dev, void *data)
 {
+    // Mount the gas file system
     struct dentry *entry = mount_bdev(type, flags, dev, data, gas_fill_super);
 
     if (IS_ERR(entry))
@@ -188,29 +194,31 @@ void gas_destroy_callback(struct rcu_head *head)
 
 void gas_destroy_inode(struct inode *inode)
 {
+    // Schedule the destruction of the inode using RCU
     call_rcu(&inode->i_rcu, gas_destroy_callback);
 }
 
 void gas_put_super(struct super_block *sb)
 {
-    // 释放超级块
+    // Free the super_block
     struct gas_sb_info *sb_info = sb->s_fs_info;
     if (sb_info)
     {
         int i;
         for (i = 0; i < sb_info->s_bam_blocks; i++)
-            brelse(sb_info->s_bam_bh[i]); //
+            brelse(sb_info->s_bam_bh[i]); // Release the buffer heads of the BAM blocks
         for (i = 0; i < sb_info->s_iam_blocks; i++)
-            brelse(sb_info->s_iam_bh[i]); //
-        kfree(sb_info->s_bam_bh);
-        kfree(sb_info);
+            brelse(sb_info->s_iam_bh[i]); // Release the buffer heads of the IAM blocks
+        kfree(sb_info->s_bam_bh);// Free the array of buffer heads
+        kfree(sb_info);// Free the gas_sb_info structure
     }
     sb->s_fs_info = NULL;
 }
 
-// 暂时看不懂
+
 int gas_statfs(struct dentry *dentry, struct kstatfs *buf)
 {
+    // Retrieve file system statistics and populate the kstatfs structure
     struct super_block *sb = dentry->d_sb;
     struct gas_sb_info *sb_info = sb->s_fs_info;
     u64 id = huge_encode_dev(sb->s_bdev->bd_dev);
@@ -227,6 +235,7 @@ int gas_statfs(struct dentry *dentry, struct kstatfs *buf)
     return 0;
 }
 
+// Definition of the super_operations structure for gas file system
 struct super_operations const gas_super_ops = {
     .alloc_inode = gas_alloc_inode,
     .destroy_inode = gas_destroy_inode,
@@ -241,6 +250,7 @@ static struct file_system_type gas_fs_type = {
 
 static int __init init_gas_fs(void)
 {
+    // Initialize the gas file system by creating the gas_inode_cache and registering the file system type
     int ret = gas_inode_cache_create();
     printk(KERN_INFO "GAS File Sysem Initialized.\n");
     printk(KERN_INFO "Made by GuTao, Artanisax, ShadowStorm.\n");
@@ -254,6 +264,7 @@ static int __init init_gas_fs(void)
 
 static void __exit exit_gas_fs(void)
 {
+    // Unregister the file system type and destroy the gas_inode_cache
     unregister_filesystem(&gas_fs_type);
     printk(KERN_INFO "GAS File Sysem Exited.\n");
 }
@@ -263,4 +274,4 @@ module_init(init_gas_fs);
 module_exit(exit_gas_fs);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("gas file system");
+MODULE_DESCRIPTION("GAS File System");
