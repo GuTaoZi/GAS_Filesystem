@@ -74,7 +74,8 @@ GAS file system implement the VFS interfaces of ext2 for `Linux-3.13.0-170`. Fol
    To install Linux-3.13.0-170 kernel, run the following command:
 
    ```shell
-   sudo apt-get install linux-image-unsigned-3.13.0-170-generic
+   sudo apt-get install linux-image-3.13.0-170-generic
+   sudo apt-get install linux-headers-3.13.0-170-generic
    ```
 
    You can change the kernel version according to the available version lists, as long as it's before Linux-3.15.
@@ -191,13 +192,13 @@ All the meta data are stored in little endian in the corresponding structures:
 ```c
 struct gas_super_block
 {
-    __le32 s_magic;			// magic number
-    __le32 s_blocksize;		// block size
-    __le32 s_bam_blocks;	// block alloc map block
-    __le32 s_iam_blocks;	// inode alloc map block
-    __le32 s_inode_blocks;	// inodes per block
-    __le32 s_nblocks;		// number of blocks
-    __le32 s_ninodes;		// number of inodes
+    __le32 s_magic;        // magic number
+    __le32 s_blocksize;    // block size
+    __le32 s_bam_blocks;   // block alloc map block
+    __le32 s_iam_blocks;   // inode alloc map block
+    __le32 s_inode_blocks; // inodes per block
+    __le32 s_nblocks;      // number of blocks
+    __le32 s_ninodes;      // number of inodes
 };
 ```
 
@@ -206,15 +207,15 @@ struct gas_super_block
 ```c
 struct gas_inode
 {
-    __le16 i_mode;			// file type: file, directory, symlink etc.
-    __le16 i_nlink;			// number of hard links references
-    __le32 i_uid;			// Owner user id
-    __le32 i_gid;			// Owner group id
-    __le32 i_size;			// inode size
-    __le32 i_atime;			// Access time
-    __le32 i_mtime;			// Modify time
-    __le32 i_ctime;			// Last change time
-    __le32 i_blkaddr[9];	// 6 direct, single + double + triple indirect block address
+    __le16 i_mode;         // file type: file, directory, symlink etc.
+    __le16 i_nlink;        // number of hard links references
+    __le32 i_uid;       // Owner user id
+    __le32 i_gid;       // Owner group id
+    __le32 i_size;         // inode size
+    __le32 i_atime;        // Access time
+    __le32 i_mtime;        // Modify time
+    __le32 i_ctime;        // Last change time
+    __le32 i_blkaddr[9];   // 6 direct, single + double + triple indirect block address
 };
 ```
 
@@ -223,8 +224,8 @@ struct gas_inode
 ```c
 struct gas_dir_entry
 {
-    char de_name[GAS_MAX_NAME_LEN];	// dentry name (max length 60)
-    __le32 de_inode;				// dentry inode number
+    char de_name[GAS_MAX_NAME_LEN]; // dentry name (max length 60)
+    __le32 de_inode;          // dentry inode number
 };
 ```
 
