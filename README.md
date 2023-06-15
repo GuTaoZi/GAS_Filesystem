@@ -288,6 +288,14 @@ const struct inode_operations gas_symlink_inode_ops = {
 };
 ```
 
+### Virtual Disk Format
+
+The virtual disk will be formatted as following:
+
+<img src="https://s2.loli.net/2023/06/16/phGJ6rqimMbEjyf.png" alt="image.png" style="zoom: 25%;" />
+
+Our script creates a 4MB virtual disk, and the block size is 4KB. The previous 6 blocks are pre-allocated as super block, block allocate map, inode allocate map, inode list, dentries of `.` and `..`. So the data blocks start from the 7th block.
+
 ## File System Maker
 
 The GAS file system maker is `/GAS_Filesystem/src/makefs/mkfs.c`.
