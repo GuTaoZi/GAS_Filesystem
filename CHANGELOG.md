@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2023-06-15
+
+### Added
+
+- Page operations
+- Complete the test scripts
+
+### Changed
+
+- The project report done
+- Add annotations to source codes
+- Format the source code
+- Organize the project repo
+
 ## [0.2.2] - 2023-06-14
 
 ### Added
