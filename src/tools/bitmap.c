@@ -30,7 +30,9 @@ int __ffs(uint64_t word)
         word >>= 2;
     }
     if ((word & 0x1) == 0)
+    {
         num += 1;
+    }
     return num;
 }
 
