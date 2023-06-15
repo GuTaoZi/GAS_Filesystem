@@ -5,6 +5,13 @@
 #define GAS_BLOCK_SIZE 4096 // byte
 #define MAGIC_NUMBER 0x6A5000F5
 
+#define BITS_PER_BLOCK          (8*GAS_BLOCK_SIZE)
+
+#define SUPER_BLOCK_NO			0
+#define GAS_BAD_INO			0
+#define GAS_ROOT_INO			1
+#define GAS_LINK_MAX			32000
+
 #include <linux/fs.h>
 #include <linux/types.h>
 
@@ -85,7 +92,6 @@ static inline sector_t gas_inode_block(struct gas_sb_info const *sbi, ino_t ino)
 	return (sector_t)(sbi->s_inode_list_start + 
 		ino / sbi->s_inodes_per_block);
 }
-size_t gas_inode_offset(struct gas_sb_info *, ino_t);
 void gas_truncate(struct inode *);
 void gas_evict_inode(struct inode *);
 void gas_set_inode(struct inode *, dev_t);
@@ -103,12 +109,9 @@ int gas_write_begin(struct file *, struct address_space *, loff_t, unsigned, uns
 int gas_write_end(struct file *, struct address_space *, loff_t, unsigned, unsigned, struct page *, void *);
 sector_t gas_bmap(struct address_space *, sector_t);
 void gas_put_super(struct super_block *);
-void gas_super_block_fill(struct gas_sb_info *, struct gas_super_block const *);
 struct inode *gas_alloc_inode(struct super_block *);
 void gas_destroy_callback(struct rcu_head *);
 void gas_destroy_inode(struct inode *);
-int gas_fill_super(struct super_block *, void *, int);
-struct dentry *gas_mount(struct file_system_type *, int, char const *, void *);
 int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs);
 
 static inline struct gas_sb_info *GAS_SB(struct super_block *sb)

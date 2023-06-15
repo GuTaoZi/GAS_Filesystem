@@ -6,6 +6,11 @@
 #include <linux/writeback.h>
 
 /* User interfaces*/
+static size_t gas_inode_offset(struct gas_sb_info const *sbi, ino_t ino)
+{
+	return sizeof(struct gas_inode) * (ino % sbi->s_inodes_per_block);
+}
+
 struct gas_inode *gas_get_inode(struct super_block *sb, ino_t ino, struct buffer_head **p)
 {
     struct gas_sb_info *sb_info = sb->s_fs_info;

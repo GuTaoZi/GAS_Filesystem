@@ -1,22 +1,14 @@
 #include "gas.h"
 
-struct super_operations const gas_super_ops = {
-    .alloc_inode = gas_alloc_inode,
-    .destroy_inode = gas_destroy_inode,
-    .write_inode = gas_write_inode,
-    .evict_inode = gas_evict_inode,
-    .put_super = gas_put_super,
-    .statfs = gas_statfs,
-};
 const struct address_space_operations gas_a_ops = {
-    .readpage = gas_readpage,
-    .readpages = gas_readpages,
-    .writepage = gas_writepage,
-    .writepages = gas_writepages,
-    .write_begin = gas_write_begin,
-    .write_end = gas_write_end,
-    .bmap = gas_bmap,
-    .direct_IO = gas_direct_io
+    // .readpage = gas_readpage,
+    // .readpages = gas_readpages,
+    // .writepage = gas_writepage,
+    // .writepages = gas_writepages,
+    // .write_begin = gas_write_begin,
+    // .write_end = gas_write_end,
+    // .bmap = gas_bmap,
+    // .direct_IO = gas_direct_io
 };
 
 const struct file_operations gas_file_ops = {
