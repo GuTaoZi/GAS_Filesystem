@@ -80,6 +80,7 @@ out_dir:
     goto out;
 }
 
+// read out the inode by dentry
 struct dentry *gas_lookup(struct inode *dir, struct dentry *dentry, unsigned flags)
 {
     struct inode *inode = NULL;

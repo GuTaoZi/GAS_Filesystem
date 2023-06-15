@@ -130,6 +130,7 @@ static int gas_readdir(struct file *file, struct dir_context *ctx)
     return gas_iterate(file_inode(file), ctx);
 }
 
+// operations for file. All in kernel/fs.h
 const struct file_operations gas_dir_ops = {
     .llseek = generic_file_llseek,
     .read = generic_read_dir,
@@ -137,6 +138,7 @@ const struct file_operations gas_dir_ops = {
     .fsync = generic_file_fsync
 };
 
+// A match structure
 struct gas_filename_match
 {
     struct dir_context ctx;
@@ -202,7 +204,7 @@ int gas_add_link(struct dentry *dentry, struct inode *inode)
             if (!le32_to_cpu(de->de_inode))
                 goto got_it;
             err = -EEXIST;
-            // already has?
+            // already has? Why it will happen
             if (strncmp(de->de_name, name, GAS_MAX_NAME_LEN - 1) == 0)
                 goto out_unlock;
         }
