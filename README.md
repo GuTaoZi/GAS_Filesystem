@@ -207,7 +207,7 @@ struct gas_super_block
 ```c
 struct gas_inode
 {
-    __le16 i_mode;         // file type: file, directory, symlink etc.
+    __le16 i_mode;         // file type: file, directory, symlink etc, permission
     __le16 i_nlink;        // number of hard links references
     __le32 i_uid;       // Owner user id
     __le32 i_gid;       // Owner group id
