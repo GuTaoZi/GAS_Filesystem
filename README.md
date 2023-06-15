@@ -158,7 +158,7 @@ The shell commands to test GAS file system is integrated in shell scripts in `GA
    ls -al /mnt/gas
    ```
 
-   You can try some file operations in
+   You can try some file operations in this directory.
 
 6. Unmount the virtual disk and remove GAS file system from kernel modules
 
@@ -215,6 +215,8 @@ struct gas_dir_entry
 
 ## VFS Interfaces
 
+This project implemented the following interfaces of VFS, so you can directly use basic file operations like `cd`, `ls`, `touch`, `cat`, `echo` etc. under the directory `/mnt/gas`.
+
 ### Address space
 
 ```c
@@ -269,6 +271,22 @@ const struct inode_operations gas_symlink_inode_ops = {
     .getattr = gas_getattr,
 };
 ```
+
+## File System Maker
+
+The GAS file system maker is `/GAS_Filesystem/src/makefs/mkfs.c`.
+
+This file system maker will open the virtual disk and initialize super block, block allocate map, inode allocate map and inode list, then it will create the root directory inode and do block cache synchronization.
+
+Also this maker will print some basic information of the file system running on this virtual disk.
+
+By execute `mkfs.gas`, you can format a virtual disk file into GAS file system style.
+
+```shell
+./mkfs.gas vdisk_name
+```
+
+<img src="https://s2.loli.net/2023/06/15/hq6IbuKWopA9mk7.png" alt="image.png" style="zoom:50%;" />
 
 ## Changelog
 
