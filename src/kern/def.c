@@ -1,14 +1,14 @@
 #include "gas.h"
 
 const struct address_space_operations gas_a_ops = {
-    // .readpage = gas_readpage,
-    // .readpages = gas_readpages,
-    // .writepage = gas_writepage,
-    // .writepages = gas_writepages,
-    // .write_begin = gas_write_begin,
-    // .write_end = gas_write_end,
-    // .bmap = gas_bmap,
-    // .direct_IO = gas_direct_io
+    .readpage = gas_readpage,
+    .readpages = gas_readpages,
+    .writepage = gas_writepage,
+    .writepages = gas_writepages,
+    .write_begin = gas_write_begin,
+    .write_end = gas_write_end,
+    .bmap = gas_bmap,
+    .direct_IO = gas_direct_io
 };
 
 const struct file_operations gas_file_ops = {

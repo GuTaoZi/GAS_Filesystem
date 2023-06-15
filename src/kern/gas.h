@@ -118,6 +118,10 @@ void gas_destroy_callback(struct rcu_head *);
 void gas_destroy_inode(struct inode *);
 int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs);
 
+unsigned gas_blocks(loff_t, struct super_block *);
+void gas_truncate_inode(struct inode *);
+int gas_get_block(struct inode *, sector_t, struct buffer_head *, int);
+
 static inline struct gas_sb_info *GAS_SB(struct super_block *sb)
 {
 	return (struct gas_sb_info *)sb->s_fs_info;

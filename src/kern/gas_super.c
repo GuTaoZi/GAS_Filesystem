@@ -13,7 +13,6 @@
 // Global Variable
 static struct kmem_cache *gas_inode_cache;
 
-/*
 static void gas_inode_init_once(void *p)
 {
     // 提供给内核用的
@@ -37,7 +36,8 @@ static void gas_inode_cache_destroy(void)
 	rcu_barrier();
 	kmem_cache_destroy(gas_inode_cache);
 	gas_inode_cache = NULL;
-}*/
+}
+
 static inline void gas_super_block_fill(struct gas_sb_info *sbi,
 			struct gas_super_block const *dsb)
 {
@@ -243,9 +243,15 @@ static struct file_system_type gas_fs_type = {
 
 static int __init init_gas_fs(void)
 {
+	int ret = gas_inode_cache_create();
     printk(KERN_INFO "GAS File Sysem Initialized.\n");
     printk(KERN_INFO "Made by GuTao, Artanisax, ShadowStorm.\n");
-    return register_filesystem(&gas_fs_type);
+	if (ret)
+		return ret;
+    ret = register_filesystem(&gas_fs_type);
+	if (ret)
+		gas_inode_cache_destroy();
+	return 0;
 }
 
 static void __exit exit_gas_fs(void)
