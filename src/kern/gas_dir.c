@@ -211,7 +211,6 @@ int gas_add_link(struct dentry *dentry, struct inode *inode)
         unlock_page(page);
         gas_dir_put_page(page);
     }
-    BUG();
     return -EINVAL;
 
 got_it:

@@ -1,6 +1,6 @@
 /*
    This file is originally from fs/minix/{itree_v2.c,itree_common.c}
-   Code is modified to adapt to gas internals.
+   Code is modified.
 */
 
 #include "gas.h"
