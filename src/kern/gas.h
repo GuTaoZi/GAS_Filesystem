@@ -5,12 +5,12 @@
 #define GAS_BLOCK_SIZE 4096 // byte
 #define MAGIC_NUMBER 0x6A5000F5
 
-#define BITS_PER_BLOCK          (8*GAS_BLOCK_SIZE)
+#define BITS_PER_BLOCK (8 * GAS_BLOCK_SIZE)
 
-#define SUPER_BLOCK_NO			0
-#define GAS_BAD_INO			0
-#define GAS_ROOT_INO			1
-#define GAS_LINK_MAX			32000
+#define SUPER_BLOCK_NO 0
+#define GAS_BAD_INO 0
+#define GAS_ROOT_INO 1
+#define GAS_LINK_MAX 32000
 
 #ifdef __KERNEL__
 #include <linux/fs.h>
@@ -30,24 +30,24 @@ struct gas_super_block
 };
 struct gas_sb_info
 {
-	__u32	s_magic;
-	__u32	s_blocksize;
-	__u32	s_bam_blocks;
-	__u32	s_iam_blocks;
-	__u32	s_inode_blocks;
-	__u32	s_nblocks;
-	__u32	s_ninodes;
+    __u32 s_magic;
+    __u32 s_blocksize;
+    __u32 s_bam_blocks;
+    __u32 s_iam_blocks;
+    __u32 s_inode_blocks;
+    __u32 s_nblocks;
+    __u32 s_ninodes;
 
-	/* some additional info	*/
-	__u32	s_inodes_per_block;
-	__u32	s_bits_per_block;
-	__u32	s_dir_entries_per_block;
-	struct buffer_head **s_bam_bh;
-	struct buffer_head **s_iam_bh;
-	__u32	s_bam_last;
-	__u32	s_iam_last;
-	__u32	s_inode_list_start;
-	__u32	s_data_block_start;
+    /* some additional info	*/
+    __u32 s_inodes_per_block;
+    __u32 s_bits_per_block;
+    __u32 s_dir_entries_per_block;
+    struct buffer_head **s_bam_bh;
+    struct buffer_head **s_iam_bh;
+    __u32 s_bam_last;
+    __u32 s_iam_last;
+    __u32 s_inode_list_start;
+    __u32 s_data_block_start;
 };
 
 struct gas_inode
@@ -93,8 +93,7 @@ ino_t gas_inode_by_name(struct inode *dir, struct qstr *child);
 void gas_inode_fill(struct gas_inode_info *, struct gas_inode const *);
 static inline sector_t gas_inode_block(struct gas_sb_info const *sbi, ino_t ino)
 {
-	return (sector_t)(sbi->s_inode_list_start + 
-		ino / sbi->s_inodes_per_block);
+    return (sector_t)(sbi->s_inode_list_start + ino / sbi->s_inodes_per_block);
 }
 void gas_truncate(struct inode *);
 void gas_evict_inode(struct inode *);
@@ -124,12 +123,12 @@ int gas_get_block(struct inode *, sector_t, struct buffer_head *, int);
 
 static inline struct gas_sb_info *GAS_SB(struct super_block *sb)
 {
-	return (struct gas_sb_info *)sb->s_fs_info;
+    return (struct gas_sb_info *)sb->s_fs_info;
 }
 
 static inline struct gas_inode_info *GAS_INODE(struct inode *inode)
 {
-	return container_of(inode, struct gas_inode_info, inode);
+    return container_of(inode, struct gas_inode_info, inode);
 }
 
 extern struct super_operations const gas_super_ops;
@@ -140,9 +139,9 @@ extern const struct inode_operations gas_symlink_inode_ops;
 extern const struct inode_operations gas_dir_inode_ops;
 extern rwlock_t pointers_lock;
 
-#include "gas_namei.h"
 #include "gas_itree.h"
+#include "gas_namei.h"
 
-#endif // 
+#endif //
 
 #endif

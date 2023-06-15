@@ -12,8 +12,8 @@ sudo ./format_vdisk.sh
 sudo ./load_mount.sh
 sudo ./umount_rmmod.sh
 
-# cd ../kern
-# make clean
+cd ../kern
+make clean
 
-# cd ../tools
-# make clean
+cd ../tools
+make clean
