@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 
 #include "bitmap.h"
-#include "sfs.h"
+#include "gas.h"
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -27,16 +27,16 @@ struct filesys_param
 #define IAM_BLOCK_START (BAM_BLOCK_START + gas.bam_blk)
 #define INODE_LIST_START (IAM_BLOCK_START + gas.iam_blk)
 #define DATA_BLOCK_START (INODE_LIST_START + gas.ino_blk)
-#define INODES_PER_BLOCK (SFS_BLOCK_SIZE / sizeof(struct sfs_inode))
+#define INODES_PER_BLOCK (GAS_BLOCK_SIZE / sizeof(struct gas_inode))
 
 static void init_super_block()
 {
     printf("GAS: Initializing super block ...\n");
-    char *buffer = (char *)malloc(SFS_BLOCK_SIZE);
-    memset(buffer, 0, SFS_BLOCK_SIZE);
-    struct sfs_super_block *sb = (struct sfs_super_block *)buffer;
-    sb->s_magic = SFS_MAGIC;
-    sb->s_blocksize = SFS_BLOCK_SIZE;
+    char *buffer = (char *)malloc(GAS_BLOCK_SIZE);
+    memset(buffer, 0, GAS_BLOCK_SIZE);
+    struct gas_super_block *sb = (struct gas_super_block *)buffer;
+    sb->s_magic = MAGIC_NUMBER;
+    sb->s_blocksize = GAS_BLOCK_SIZE;
     sb->s_bam_blocks = gas.bam_blk;
     sb->s_iam_blocks = gas.iam_blk;
     sb->s_inode_blocks = gas.ino_blk;
@@ -48,7 +48,7 @@ static void init_super_block()
 static void init_block_alloc_map()
 {
     printf("GAS: Initializing block alloc map ...\n");
-    char *buffer = (char *)malloc(SFS_BLOCK_SIZE);
+    char *buffer = (char *)malloc(GAS_BLOCK_SIZE);
     u64 *map = (u64 *)buffer;
     int block = BAM_BLOCK_START;
     int preallocated = gas.data_st;
@@ -57,12 +57,12 @@ static void init_block_alloc_map()
     {
         if (preallocated > BITS_PER_BLOCK)
         {
-            memset(buffer, 0xff, SFS_BLOCK_SIZE);
+            memset(buffer, 0xff, GAS_BLOCK_SIZE);
             preallocated -= BITS_PER_BLOCK;
         }
         else
         {
-            memset(buffer, 0, SFS_BLOCK_SIZE);
+            memset(buffer, 0, GAS_BLOCK_SIZE);
             if (preallocated)
             {
                 bitmap_set(map, 0, preallocated);
@@ -86,7 +86,7 @@ static void init_block_alloc_map()
 static void init_inode_alloc_map()
 {
     printf("GAS: Initializing iNode alloc map ...\n");
-    char *buffer = (char *)malloc(SFS_BLOCK_SIZE);
+    char *buffer = (char *)malloc(GAS_BLOCK_SIZE);
     u64 *map = (u64 *)buffer;
     int preallocated = 1;
     int block = IAM_BLOCK_START;
@@ -95,12 +95,12 @@ static void init_inode_alloc_map()
     {
         if (preallocated > BITS_PER_BLOCK)
         {
-            memset(buffer, 0xff, SFS_BLOCK_SIZE);
+            memset(buffer, 0xff, GAS_BLOCK_SIZE);
             preallocated -= BITS_PER_BLOCK;
         }
         else
         {
-            memset(buffer, 0, SFS_BLOCK_SIZE);
+            memset(buffer, 0, GAS_BLOCK_SIZE);
             if (preallocated)
             {
                 bitmap_set(map, 0, preallocated);
@@ -124,8 +124,8 @@ static void init_inode_alloc_map()
 static void init_inode_list()
 {
     printf("GAS: Initializing iNode list ...\n");
-    char *buffer = (char *)malloc(SFS_BLOCK_SIZE);
-    memset(buffer, 0, SFS_BLOCK_SIZE);
+    char *buffer = (char *)malloc(GAS_BLOCK_SIZE);
+    memset(buffer, 0, GAS_BLOCK_SIZE);
     int block = INODE_LIST_START;
     int i;
     for (i = 1; i <= gas.ino_blk; i++)
@@ -137,21 +137,21 @@ static void init_inode_list()
 
 int read_block(int blk_id, void *block)
 {
-    lseek(gas.fs_fd, blk_id * SFS_BLOCK_SIZE, SEEK_SET);
-    return read(gas.fs_fd, block, SFS_BLOCK_SIZE);
+    lseek(gas.fs_fd, blk_id * GAS_BLOCK_SIZE, SEEK_SET);
+    return read(gas.fs_fd, block, GAS_BLOCK_SIZE);
 }
 
 int write_block(int blk_id, void *block)
 {
-    lseek(gas.fs_fd, blk_id * SFS_BLOCK_SIZE, SEEK_SET);
-    return write(gas.fs_fd, block, SFS_BLOCK_SIZE);
+    lseek(gas.fs_fd, blk_id * GAS_BLOCK_SIZE, SEEK_SET);
+    return write(gas.fs_fd, block, GAS_BLOCK_SIZE);
 }
 
 struct blk_cache
 {
     int dirty;
     int blk_id;
-    char block[SFS_BLOCK_SIZE];
+    char block[GAS_BLOCK_SIZE];
     struct blk_cache *next;
 };
 
@@ -251,7 +251,7 @@ u32 allocate_blk(int blocks)
 u32 allocate_inode()
 {
     u64 *map = (u64 *)bc_read(IAM_BLOCK_START);
-    u64 n = bitmap_alloc_region(map, BITS_PER_BLOCK, SFS_ROOT_INO, 1);
+    u64 n = bitmap_alloc_region(map, BITS_PER_BLOCK, GAS_ROOT_INO, 1);
     if (n == INVALID_NO)
     {
         printf("Error: cannot allocate inode\n");
@@ -274,9 +274,9 @@ void free_inode(u32 ino_id)
     bc_write(IAM_BLOCK_START, 0);
 }
 
-struct sfs_inode *get_inode(u32 ino_id)
+struct gas_inode *get_inode(u32 ino_id)
 {
-    struct sfs_inode *ino_list = (struct sfs_inode *)bc_read(INODE_LIST_START);
+    struct gas_inode *ino_list = (struct gas_inode *)bc_read(INODE_LIST_START);
     if (ino_id >= INODES_PER_BLOCK)
     {
         return NULL;
@@ -286,13 +286,13 @@ struct sfs_inode *get_inode(u32 ino_id)
 
 u32 new_inode(mode_t mode, int byte_size)
 {
-    int nblocks = (byte_size + SFS_BLOCK_SIZE - 1) / SFS_BLOCK_SIZE;
+    int nblocks = (byte_size + GAS_BLOCK_SIZE - 1) / GAS_BLOCK_SIZE;
     u32 ino_id = allocate_inode();
     if (ino_id == INVALID_NO)
     {
         return ino_id;
     }
-    struct sfs_inode *ino = get_inode(ino_id);
+    struct gas_inode *ino = get_inode(ino_id);
     if (ino == NULL)
     {
         printf("Cannot read inode\n");
@@ -316,20 +316,20 @@ u32 new_inode(mode_t mode, int byte_size)
     return ino_id;
 }
 
-void dump_inode(struct sfs_inode *ino)
+void dump_inode(struct gas_inode *ino)
 {
     printf("ino->i_blkaddr[0] = %d\n", ino->i_blkaddr[0]);
     printf("ino->i_size = %d\n", ino->i_size);
     printf("ino->i_mode = 0x%x\n", ino->i_mode);
 }
 
-void sfs_add_dentry(struct sfs_inode *ino, char *name, u32 new_ino)
+void gas_add_dentry(struct gas_inode *ino, char *name, u32 new_ino)
 {
     u32 blk_id;
     u32 offset;
-    struct sfs_dir_entry *dp;
+    struct gas_dir_entry *dp;
 
-    if (ino->i_size >= SFS_BLOCK_SIZE)
+    if (ino->i_size >= GAS_BLOCK_SIZE)
     {
         printf("Error: Failed to create a dentry due to limited space.\n");
         printf("name = %s, new_ino = %d\n", name, new_ino);
@@ -338,30 +338,30 @@ void sfs_add_dentry(struct sfs_inode *ino, char *name, u32 new_ino)
         exit(1);
     }
 
-    blk_id = ino->i_blkaddr[0] + (ino->i_size / SFS_BLOCK_SIZE);
-    offset = ino->i_size % SFS_BLOCK_SIZE;
+    blk_id = ino->i_blkaddr[0] + (ino->i_size / GAS_BLOCK_SIZE);
+    offset = ino->i_size % GAS_BLOCK_SIZE;
 
-    dp = (struct sfs_dir_entry *)((char *)bc_read(blk_id) + offset);
-    strncpy(dp->de_name, name, SFS_MAX_NAME_LEN - 1);
-    dp->de_name[SFS_MAX_NAME_LEN - 1] = '\0';
+    dp = (struct gas_dir_entry *)((char *)bc_read(blk_id) + offset);
+    strncpy(dp->de_name, name, GAS_MAX_NAME_LEN - 1);
+    dp->de_name[GAS_MAX_NAME_LEN - 1] = '\0';
     dp->de_inode = new_ino;
 
-    ino->i_size += sizeof(struct sfs_dir_entry);
+    ino->i_size += sizeof(struct gas_dir_entry);
     bc_write(blk_id, 0);
 }
 
 void make_rootdir()
 {
-    u32 ino_id = new_inode(S_IFDIR | 0755, 64 * sizeof(struct sfs_dir_entry));
+    u32 ino_id = new_inode(S_IFDIR | 0755, 64 * sizeof(struct gas_dir_entry));
     if (ino_id == INVALID_NO)
     {
         printf("Create root dir error\n");
         bc_sync();
         exit(1);
     }
-    struct sfs_inode *ino = get_inode(ino_id);
-    sfs_add_dentry(ino, ".", SFS_ROOT_INO);
-    sfs_add_dentry(ino, "..", SFS_ROOT_INO);
+    struct gas_inode *ino = get_inode(ino_id);
+    gas_add_dentry(ino, ".", GAS_ROOT_INO);
+    gas_add_dentry(ino, "..", GAS_ROOT_INO);
 }
 
 int main(int argc, char *argv[])
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
     size = lseek(gas.fs_fd, 0, SEEK_END);
 
     // Initialize file system configuration
-    gas.blk_cnt = size / SFS_BLOCK_SIZE;
+    gas.blk_cnt = size / GAS_BLOCK_SIZE;
     gas.bam_blk = (gas.blk_cnt + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
     gas.ino_blk = (gas.blk_cnt / 4) / INODES_PER_BLOCK;
     gas.ino_cnt = gas.ino_blk * INODES_PER_BLOCK;

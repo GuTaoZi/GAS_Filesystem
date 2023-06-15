@@ -12,7 +12,10 @@
 #define GAS_ROOT_INO			1
 #define GAS_LINK_MAX			32000
 
+#ifdef __KERNEL__
 #include <linux/fs.h>
+#endif // __KERNEL__
+
 #include <linux/types.h>
 
 struct gas_super_block
@@ -60,18 +63,19 @@ struct gas_inode
     __le32 i_blkaddr[9]; // 6+1+1+1
 };
 
-struct gas_inode_info
-{
-    __le32 blkaddr[9];
-    struct inode inode;
-};
-
 struct gas_dir_entry
 {
     char de_name[GAS_MAX_NAME_LEN];
     __le32 de_inode;
 };
 
+#ifdef __KERNEL__
+
+struct gas_inode_info
+{
+    __le32 blkaddr[9];
+    struct inode inode;
+};
 void gas_free_block(struct inode *inode, unsigned long block);
 unsigned long gas_new_block(struct inode *inode, int *err);
 unsigned long gas_count_free_blocks(struct super_block *sb);
@@ -134,5 +138,7 @@ extern rwlock_t pointers_lock;
 
 #include "gas_namei.h"
 #include "gas_itree.h"
+
+#endif // 
 
 #endif
