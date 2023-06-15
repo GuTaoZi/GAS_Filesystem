@@ -35,6 +35,7 @@ static int gas_dir_prepare_chunk(struct page *page, loff_t pos, unsigned len)
     return __block_write_begin(page, pos, len, gas_get_block);
 }
 
+// write a page into file (disk)
 static int gas_dir_commit_chunk(struct page *page, loff_t pos, unsigned len)
 {
     struct address_space *mapping = page->mapping;
@@ -54,6 +55,7 @@ static int gas_dir_commit_chunk(struct page *page, loff_t pos, unsigned len)
     return err;
 }
 
+// read a page from file (disk)
 static struct page *gas_dir_get_page(struct inode *inode, size_t n)
 {
     struct address_space *mapping = inode->i_mapping;
@@ -70,6 +72,7 @@ static void gas_dir_put_page(struct page *page)
     put_page(page); // same as calling page_cache_release(page);
 }
 
+// add entry to a dir node
 static int gas_dir_emit(struct dir_context *ctx, struct gas_dir_entry *de)
 {
     unsigned type = DT_UNKNOWN;
@@ -82,6 +85,7 @@ static int gas_dir_emit(struct dir_context *ctx, struct gas_dir_entry *de)
         return dir_emit(ctx, de->de_name, len, ino, type);
 }
 
+// Read entries under a dir
 static int gas_iterate(struct inode *inode, struct dir_context *ctx)
 {
     size_t pages = gas_dir_pages(inode);
@@ -90,6 +94,7 @@ static int gas_iterate(struct inode *inode, struct dir_context *ctx)
 
     for (; pidx < pages; ++pidx, off = 0)
     {
+        // read entry under a dir
         struct page *page = gas_dir_get_page(inode, pidx);
         struct gas_dir_entry *de;
         char *kaddr;
@@ -106,6 +111,7 @@ static int gas_iterate(struct inode *inode, struct dir_context *ctx)
         {
             if (!gas_dir_emit(ctx, de))
             {
+                // cannot link the entry to the dir
                 gas_dir_put_page(page);
                 return 0;
             }
@@ -118,14 +124,17 @@ static int gas_iterate(struct inode *inode, struct dir_context *ctx)
     return 0;
 }
 
+// read dir
 static int gas_readdir(struct file *file, struct dir_context *ctx)
 {
     return gas_iterate(file_inode(file), ctx);
 }
 
 const struct file_operations gas_dir_ops = {
-    .llseek = generic_file_llseek, .read = generic_read_dir, .iterate = gas_readdir,
-    //	.fsync = generic_file_fsync,
+    .llseek = generic_file_llseek,
+    .read = generic_read_dir,
+    .iterate = gas_readdir,
+    .fsync = generic_file_fsync
 };
 
 struct gas_filename_match
@@ -136,6 +145,7 @@ struct gas_filename_match
     int len;
 };
 
+// match filename
 static int gas_match(void *ctx, const char *name, int len, loff_t off, u64 ino, unsigned type)
 {
     struct gas_filename_match *match = (struct gas_filename_match *)ctx;
@@ -151,8 +161,10 @@ static int gas_match(void *ctx, const char *name, int len, loff_t off, u64 ino, 
     return 0;
 }
 
+// adds a link to a dir
 int gas_add_link(struct dentry *dentry, struct inode *inode)
 {
+    // parent directory inode.
     struct inode *dir = dentry->d_parent->d_inode;
     const char *name = dentry->d_name.name;
     struct page *page = NULL;
@@ -163,6 +175,7 @@ int gas_add_link(struct dentry *dentry, struct inode *inode)
     loff_t pos;
     int err = 0;
 
+    // Iterate over each page in the dir
     for (n = 0; n <= npages; n++)
     {
         char *limit, *dir_end;
@@ -174,18 +187,22 @@ int gas_add_link(struct dentry *dentry, struct inode *inode)
         kaddr = (char *)page_address(page);
         dir_end = kaddr + gas_last_byte(dir, n);
         limit = kaddr + PAGE_CACHE_SIZE - sizeof(struct gas_dir_entry);
+        // Iterate over each entry on this page
         for (p = kaddr; p <= limit; p += sizeof(struct gas_dir_entry))
         {
             de = (struct gas_dir_entry *)p;
+            // either at end
             if ((char *)de == dir_end)
             {
                 /* We hit i_size */
                 de->de_inode = cpu_to_le32(0);
                 goto got_it;
             }
+            // or at a 0 inode
             if (!le32_to_cpu(de->de_inode))
                 goto got_it;
             err = -EEXIST;
+            // already has?
             if (strncmp(de->de_name, name, GAS_MAX_NAME_LEN - 1) == 0)
                 goto out_unlock;
         }
@@ -215,6 +232,7 @@ out_unlock:
     goto out_put;
 }
 
+// mkdir a new dir
 int gas_make_empty(struct inode *inode, struct inode *dir)
 {
     struct page *page = grab_cache_page(inode->i_mapping, 0);
@@ -224,7 +242,7 @@ int gas_make_empty(struct inode *inode, struct inode *dir)
 
     if (!page)
         return -ENOMEM;
-
+    // alloc new space
     err = gas_dir_prepare_chunk(page, 0, 2 * sizeof(struct gas_dir_entry));
     if (err)
     {
@@ -235,6 +253,7 @@ int gas_make_empty(struct inode *inode, struct inode *dir)
     kaddr = kmap_atomic(page);
     memset(kaddr, 0, PAGE_CACHE_SIZE);
 
+    // add init entries
     de = (struct gas_dir_entry *)kaddr;
     de->de_inode = cpu_to_le32(inode->i_ino);
     strcpy(de->de_name, ".");
@@ -243,6 +262,7 @@ int gas_make_empty(struct inode *inode, struct inode *dir)
     strcpy(de->de_name, "..");
     kunmap_atomic(kaddr);
 
+    // save back
     err = gas_dir_commit_chunk(page, 0, 2 * sizeof(struct gas_dir_entry));
 fail:
     page_cache_release(page);
@@ -296,6 +316,7 @@ found:
     return (struct gas_dir_entry *)p;
 }
 
+// delete it
 int gas_delete_entry(struct gas_dir_entry *de, struct page *page)
 {
     struct inode *inode = page->mapping->host;
@@ -391,6 +412,7 @@ void gas_set_link(struct gas_dir_entry *de, struct page *page, struct inode *ino
     mark_inode_dirty(dir);
 }
 
+// goto ../
 struct gas_dir_entry *gas_dotdot(struct inode *dir, struct page **p)
 {
     struct page *page = gas_dir_get_page(dir, 0);
@@ -398,12 +420,14 @@ struct gas_dir_entry *gas_dotdot(struct inode *dir, struct page **p)
 
     if (!IS_ERR(page))
     {
+        // because .. is the second entry
         de = (struct gas_dir_entry *)((char *)page_address(page) + sizeof(struct gas_dir_entry));
         *p = page;
     }
     return de;
 }
 
+// find a name under a dir
 ino_t gas_inode_by_name(struct inode *dir, struct qstr *child)
 {
     struct gas_filename_match match = {.ctx = {&gas_match, 0}, .ino = 0, .name = child->name, .len = child->len};
@@ -414,22 +438,3 @@ ino_t gas_inode_by_name(struct inode *dir, struct qstr *child)
         pr_err("Cannot find dir entry, error = %d", err);
     return match.ino;
 }
-
-/*
-ino_t gas_inode_by_name(struct dentry *dentry)
-{
-    struct page *page;
-    struct gas_dir_entry *de = gas_find_entry(dentry, &page);
-    ino_t res = 0;
-
-    if (de) {
-        struct address_space *mapping = page->mapping;
-        struct inode *inode = mapping->host;
-        struct gas_sb_info *sbi = gas_SB(inode->i_sb);
-
-        res = le32_to_cpu(de->de_inode);
-        gas_dir_put_page(page);
-    }
-    return res;
-}
-*/

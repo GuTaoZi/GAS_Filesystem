@@ -5,6 +5,7 @@
 
 #include "gas.h"
 
+/* just use default function below */
 int gas_writepage(struct page *page, struct writeback_control *wbc)
 {
     return block_write_full_page(page, gas_get_block, wbc);
