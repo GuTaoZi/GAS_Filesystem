@@ -4,33 +4,48 @@ A custom Linux file system designed and implemented as a kernel module. Project 
 
 ## Contributors
 
-| SID      | Name                                            | Contributions | Contribution Rate |
-| -------- | ----------------------------------------------- | ------------- | ----------------- |
-| 12111624 | [GuTaoZi](https://github.com/GuTaoZi)           |               | 33.33%            |
-| 12110524 | [Artanisax](https://github.com/Artanisax)       |               | 33.33%            |
-| 12112012 | [ShadowStorm](https://github.com/Jayfeather233) |               | 33.33%            |
-
-## TODOs
-
-- [ ] GAS File System
-  - [x] Layout Component
-    - [x] Super block
-    - [x] INode
-    - [x] Directory entry
-    - [x] Tree structure
-  - [x] VFS interfaces
-    - [x] Page
-    - [x] File operations
-    - [x] Address space operations
-    - [x] INode operations
-      - [x] File
-      - [x] Link
-      - [x] Directory
-  - [x] Annotations
-- [ ] Project report
-- [ ] Project video
+| SID      | Name                                            | Contributions                        | Contribution Rate |
+| -------- | ----------------------------------------------- | ------------------------------------ | ----------------- |
+| 12111624 | [GuTaoZi](https://github.com/GuTaoZi)           | Document, file system maker, scripts | 33.33%            |
+| 12110524 | [Artanisax](https://github.com/Artanisax)       | Layout, annotation, VFS interface    | 33.33%            |
+| 12112012 | [ShadowStorm](https://github.com/Jayfeather233) | Layout, annotation, environment      | 33.33%            |
 
 ## Project Structure
+
+```
+GAS_Filesystem
+├── CHANGELOG.md
+├── doc
+│   ├── Project Report.pdf
+│   └── Project Proposal.pdf
+├── LICENSE
+├── README.md
+└── src
+    ├── kern
+    │   ├── bitmap.c
+    │   ├── def.c
+    │   ├── gas_dir.c
+    │   ├── gas.h
+    │   ├── gas_inode.c
+    │   ├── gas_itree.c
+    │   ├── gas_itree.h
+    │   ├── gas_namei.c
+    │   ├── gas_namei.h
+    |   ├── gas_page.c
+    |   ├── gas_super.c
+    |   └── Makefile
+    ├── makefs
+    |   ├── bitmap.c
+    |   ├── bitmap.h
+    |   ├── Makefile
+    |   └── mkfs.c
+    └── test
+        ├── build_km_fs.sh
+        ├── format_vdisk.sh
+        ├── load_mount.sh
+        ├── total.sh
+        └── umount_rmmod.sh
+```
 
 ## Environment Setup
 
@@ -291,3 +306,23 @@ By execute `mkfs.gas`, you can format a virtual disk file into GAS file system s
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/GuTaoZi/GAS_Filesystem/blob/main/CHANGELOG.md).
+
+## TODOs
+
+- [x] GAS File System
+  - [x] Layout Component
+    - [x] Super block
+    - [x] INode
+    - [x] Directory entry
+    - [x] Tree structure
+  - [x] VFS interfaces
+    - [x] Page
+    - [x] File operations
+    - [x] Address space operations
+    - [x] INode operations
+      - [x] File
+      - [x] Link
+      - [x] Directory
+  - [x] Annotations
+- [x] Project report
+- [ ] Project video
