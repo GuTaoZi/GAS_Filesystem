@@ -11,18 +11,19 @@
 // Global Variable
 static struct kmem_cache *gas_inode_cache;
 
+/*
 static void gas_inode_init_once(void *p)
 {
     // 提供给内核用的
-	struct sfs_inode_info *info = (struct sfs_inode_info *)p;
-	inode_init_once(&info->inode);
+	struct gas_inode_info *info = (struct gas_inode_info *)p;
+	inode_init_once(&(info->inode));
 }
 
 static int gas_inode_cache_create(void)
 {
 	// 为inode_info申请缓存
-	gas_inode_cache = kmem_cache_create("sfs_inode",
-		sizeof(struct sfs_inode_info), 0,
+	gas_inode_cache = kmem_cache_create("gas_inode",
+		sizeof(struct gas_inode_info), 0,
 		(SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD), gas_inode_init_once);
 	if (gas_inode_cache == NULL)
 		return -ENOMEM;
@@ -34,9 +35,9 @@ static void gas_inode_cache_destroy(void)
 	rcu_barrier();
 	kmem_cache_destroy(gas_inode_cache);
 	gas_inode_cache = NULL;
-}
+}*/
 
-static struct inode *gas_alloc_inode(struct super_block *sb)
+struct inode *gas_alloc_inode(struct super_block *sb)
 {
     // 在cache里申请一个node_info
     struct gas_inode_info *info = (struct gas_inode_info *)kmem_cache_alloc(gas_inode_cache, GFP_KERNEL);

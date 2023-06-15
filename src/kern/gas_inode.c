@@ -6,12 +6,6 @@
 #include <linux/writeback.h>
 
 /* User interfaces*/
-static inline sector_t gas_inode_block(struct gas_sb_info const *sbi, ino_t ino)
-{
-	return (sector_t)(sbi->s_inode_list_start + 
-		ino / sbi->s_inodes_per_block);
-}
-
 struct gas_inode *gas_get_inode(struct super_block *sb, ino_t ino, struct buffer_head **p)
 {
     struct gas_sb_info *sb_info = sb->s_fs_info;
@@ -31,6 +25,8 @@ void gas_truncate(struct inode * inode)
 		return;
 	gas_truncate_inode(inode);
 }
+
+extern const struct file_operations gas_dir_ops;
 
 void gas_set_inode(struct inode *inode, dev_t rdev)
 {
@@ -104,23 +100,6 @@ struct buffer_head *gas_update_inode(struct inode *inode)
     return bh;
 }
 
-int gas_write_inode(struct inode *inode, struct writeback_control *ctrl)
-{
-    int err = 0;
-    struct buffer_head *bh = gas_update_inode(inode);
-    if (!bh)
-        return -EIO;
-    // 缓冲头请求写回并且并由于写入失败变成不被更新的状态
-    if (ctrl->sync_mode == WB_SYNC_ALL && buffer_dirty(bh))
-    {
-        sync_dirty_buffer(hb);
-        if (buffer_req(bh) && !buffer_uptodate(bh))
-            err = -EIO;
-    }
-    brelas(bh);
-    return err;
-}
-
 void gas_evict_inode(struct inode *inode)
 {
     truncate_inode_pages(&inode->i_data, 0);
@@ -134,13 +113,13 @@ void gas_evict_inode(struct inode *inode)
 		gas_free_inode(inode); // in bitmap.c
 }
 
-static void gas_inode_fill(struct gas_inode_info *info,
+void gas_inode_fill(struct gas_inode_info *info,
 			struct gas_inode const *gnode)
 {
 	int i;
 
 	info->inode.i_mode = le16_to_cpu(gnode->i_mode);
-	info->inode.i_infoze = le32_to_cpu(gnode->i_size);
+	info->inode.i_size = le32_to_cpu(gnode->i_size);
 	info->inode.i_ctime.tv_sec = le32_to_cpu(gnode->i_ctime);
 	info->inode.i_atime.tv_sec = le32_to_cpu(gnode->i_atime);
 	info->inode.i_mtime.tv_sec = le32_to_cpu(gnode->i_mtime);

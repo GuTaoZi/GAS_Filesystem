@@ -79,8 +79,12 @@ int gas_empty_dir(struct inode *inode);
 void gas_set_link(struct gas_dir_entry *de, struct page *page, struct inode *inode);
 struct gas_dir_entry *gas_dotdot(struct inode *dir, struct page **p);
 ino_t gas_inode_by_name(struct inode *dir, struct qstr *child);
-void gas_inode_fill(struct gas_inode_info *, struct gas_inode *);
-sector_t gas_inode_block(struct gas_sb_info *, ino_t);
+void gas_inode_fill(struct gas_inode_info *, struct gas_inode const *);
+static inline sector_t gas_inode_block(struct gas_sb_info const *sbi, ino_t ino)
+{
+	return (sector_t)(sbi->s_inode_list_start + 
+		ino / sbi->s_inodes_per_block);
+}
 size_t gas_inode_offset(struct gas_sb_info *, ino_t);
 void gas_truncate(struct inode *);
 void gas_evict_inode(struct inode *);
@@ -103,9 +107,6 @@ void gas_super_block_fill(struct gas_sb_info *, struct gas_super_block const *);
 struct inode *gas_alloc_inode(struct super_block *);
 void gas_destroy_callback(struct rcu_head *);
 void gas_destroy_inode(struct inode *);
-void gas_inode_init_once(void *);
-int gas_inode_cache_create(void);
-void gas_inode_cache_destroy(void);
 int gas_fill_super(struct super_block *, void *, int);
 struct dentry *gas_mount(struct file_system_type *, int, char const *, void *);
 int gas_statfs(struct dentry *dentry, struct kstatfs *kstatfs);
