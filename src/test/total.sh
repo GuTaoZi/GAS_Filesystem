@@ -1,10 +1,10 @@
 #!/bin/sh
 
 cd ../kern
-make clean
+# make clean
 make
 cd ../tools
-make clean
+# make clean
 make
 cd ../test
 

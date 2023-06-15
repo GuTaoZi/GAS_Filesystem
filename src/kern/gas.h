@@ -2,8 +2,8 @@
 #define __GAS_H__
 
 #define GAS_MAX_NAME_LEN 256
-#define GAS_BLOCK_SIZE 4096 // byte
-#define MAGIC_NUMBER 0x6A5000F5
+#define GAS_BLOCK_SIZE 4096 // 4KB
+#define MAGIC_NUMBER 0x6A5000F5 //GAS000FS
 
 #define BITS_PER_BLOCK (8 * GAS_BLOCK_SIZE)
 
@@ -14,7 +14,7 @@
 
 #ifdef __KERNEL__
 #include <linux/fs.h>
-#endif // __KERNEL__
+#endif
 
 #include <linux/types.h>
 
@@ -28,6 +28,7 @@ struct gas_super_block
     __le32 s_nblocks;
     __le32 s_ninodes;
 };
+
 struct gas_sb_info
 {
     __u32 s_magic;

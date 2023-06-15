@@ -4,7 +4,6 @@
 #include <linux/fs.h>
 #include <linux/types.h>
 #include <stdbool.h>
-// #include "gas.h"
 
 int gas_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t rdev);
 int gas_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode);

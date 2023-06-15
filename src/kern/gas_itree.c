@@ -1,7 +1,8 @@
 /*
-    This file is originally from fs/minix/{itree_v2.c,itree_common.c}
-    Code is modified to adapt to gas internals.
+   This file is originally from fs/minix/{itree_v2.c,itree_common.c}
+   Code is modified to adapt to gas internals.
 */
+
 #include "gas.h"
 #include <linux/buffer_head.h>
 
@@ -9,6 +10,9 @@ static inline block_t *i_data(struct inode *inode)
 {
     return (block_t *)GAS_INODE(inode)->blkaddr;
 }
+
+// Convert a block number to the corresponding path of offsets in the inode.
+// The path is stored in the "offsets" array.
 
 static int block_to_path(struct inode *inode, long block, int offsets[DEPTH])
 {
@@ -53,11 +57,20 @@ static int block_to_path(struct inode *inode, long block, int offsets[DEPTH])
     return n;
 }
 
+// Add a chain of indirect blocks to the given "p" pointer.
+// - "bh" is the buffer head of the block.
+// - "v" is the block address to be added to the chain.
+
 static inline void add_chain(Indirect *p, struct buffer_head *bh, block_t *v)
 {
     p->key = *(p->p = v);
     p->bh = bh;
 }
+
+// Verify the integrity of the chain of indirect blocks.
+// - "from" is the starting point of the chain.
+// - "to" is the ending point of the chain.
+// Returns 1 if the chain is valid, 0 otherwise.
 
 static inline int verify_chain(Indirect *from, Indirect *to)
 {
@@ -66,10 +79,20 @@ static inline int verify_chain(Indirect *from, Indirect *to)
     return (from > to);
 }
 
+// Get the block address corresponding to a buffer head.
+// Returns the block address.
+
 static inline block_t *block_end(struct buffer_head *bh)
 {
     return (block_t *)((char *)bh->b_data + bh->b_size);
 }
+
+// Get the branch of the given inode at a specific depth and offset in the inode.
+// - "inode" is the inode structure.
+// - "depth" is the depth of the branch.
+// - "offsets" is the array of offsets in the inode.
+// - "chain" is the chain of indirect blocks.
+// Returns the branch at the specified depth and offset.
 
 static inline Indirect *get_branch(struct inode *inode, int depth, int *offsets, Indirect chain[DEPTH], int *err)
 {
@@ -107,6 +130,13 @@ failure:
 no_block:
     return p;
 }
+
+// Allocate a new branch at the specified depth and offset in the inode.
+// - "inode" is the inode structure.
+// - "depth" is the depth of the branch.
+// - "offsets" is the array of offsets in the inode.
+// - "chain" is the chain of indirect blocks.
+// Returns the allocated branch, or NULL on failure.
 
 static int alloc_branch(struct inode *inode, int num, int *offsets, Indirect *branch)
 {
@@ -181,74 +211,6 @@ changed:
     return -EAGAIN;
 }
 
-int get_block(struct inode *inode, sector_t block, struct buffer_head *bh, int create)
-{
-    int err = -EIO;
-    int offsets[DEPTH];
-    Indirect chain[DEPTH];
-    Indirect *partial;
-    int left;
-    int depth = block_to_path(inode, block, offsets);
-
-    if (depth == 0)
-        goto out;
-
-reread:
-    partial = get_branch(inode, depth, offsets, chain, &err);
-
-    /* Simplest case - block found, no allocation needed */
-    if (!partial)
-    {
-    got_it:
-        pr_debug("ino %ld, block %ld -> %d\n", inode->i_ino, block, block_to_cpu(chain[depth - 1].key));
-        map_bh(bh, inode->i_sb, block_to_cpu(chain[depth - 1].key));
-        /* Clean up and exit */
-        partial = chain + depth - 1; /* the whole chain */
-        goto cleanup;
-    }
-
-    /* Next simple case - plain lookup or failed read of indirect block */
-    if (!create || err == -EIO)
-    {
-    cleanup:
-        while (partial > chain)
-        {
-            brelse(partial->bh);
-            partial--;
-        }
-    out:
-        return err;
-    }
-
-    pr_debug("ino %ld, try to allocate block %ld\n", inode->i_ino, block);
-    /*
-     * Indirect block might be removed by truncate while we were
-     * reading it. Handling of that case (forget what we've got and
-     * reread) is taken out of the main path.
-     */
-    if (err == -EAGAIN)
-        goto changed;
-
-    left = (chain + depth) - partial;
-    err = alloc_branch(inode, left, offsets + (partial - chain), partial);
-    if (err)
-        goto cleanup;
-
-    if (splice_branch(inode, chain, partial, left) < 0)
-        goto changed;
-
-    set_buffer_new(bh);
-    goto got_it;
-
-changed:
-    while (partial > chain)
-    {
-        brelse(partial->bh);
-        partial--;
-    }
-    goto reread;
-}
-
 static inline int all_zeroes(block_t *p, block_t *q)
 {
     while (p < q)
@@ -275,8 +237,11 @@ static Indirect *find_shared(struct inode *inode, int depth, int offsets[DEPTH],
         write_unlock(&pointers_lock);
         goto no_top;
     }
-    for (p = partial; p > chain && all_zeroes((block_t *)p->bh->b_data, p->p); p--)
-        ;
+    p = partial;
+    while (p > chain && all_zeroes((block_t *)p->bh->b_data, p->p))
+    {
+        p--;
+    }
     if (p == chain + k - 1 && p > chain)
     {
         p->p--;
@@ -312,6 +277,10 @@ static inline void free_data(struct inode *inode, block_t *p, block_t *q)
     }
 }
 
+// Free the given chain of indirect blocks.
+// - "from" is the starting point of the chain.
+// - "to" is the ending point of the chain.
+
 static void free_branches(struct inode *inode, block_t *p, block_t *q, int depth)
 {
     struct buffer_head *bh;
@@ -338,7 +307,27 @@ static void free_branches(struct inode *inode, block_t *p, block_t *q, int depth
         free_data(inode, p, q);
 }
 
-static inline void truncate(struct inode *inode)
+// Truncate the file associated with the given inode.
+// - "inode" is the inode structure.
+
+unsigned gas_blocks(loff_t size, struct super_block *sb)
+{
+    int k = sb->s_blocksize_bits - 10;
+    unsigned blocks, res, direct = DIRECT, i = DEPTH;
+    blocks = (size + sb->s_blocksize - 1) >> (BLOCK_SIZE_BITS + k);
+    res = blocks;
+    while (--i && blocks > direct)
+    {
+        blocks -= direct;
+        blocks += sb->s_blocksize / sizeof(block_t) - 1;
+        blocks /= sb->s_blocksize / sizeof(block_t);
+        res += blocks;
+        direct = 1;
+    }
+    return res;
+}
+
+void gas_truncate_inode(struct inode *inode)
 {
     struct super_block *sb = inode->i_sb;
     block_t *idata = i_data(inode);
@@ -351,7 +340,7 @@ static inline void truncate(struct inode *inode)
     long iblock;
 
     iblock = (inode->i_size + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
-    block_truncate_page(inode->i_mapping, inode->i_size, get_block);
+    block_truncate_page(inode->i_mapping, inode->i_size, gas_get_block);
 
     n = block_to_path(inode, iblock, offsets);
     if (!n)
@@ -399,34 +388,72 @@ do_indirects:
     mark_inode_dirty(inode);
 }
 
-static inline unsigned nblocks(loff_t size, struct super_block *sb)
-{
-    int k = sb->s_blocksize_bits - 10;
-    unsigned blocks, res, direct = DIRECT, i = DEPTH;
-    blocks = (size + sb->s_blocksize - 1) >> (BLOCK_SIZE_BITS + k);
-    res = blocks;
-    while (--i && blocks > direct)
-    {
-        blocks -= direct;
-        blocks += sb->s_blocksize / sizeof(block_t) - 1;
-        blocks /= sb->s_blocksize / sizeof(block_t);
-        res += blocks;
-        direct = 1;
-    }
-    return res;
-}
-
-unsigned gas_blocks(loff_t size, struct super_block *sb)
-{
-    return nblocks(size, sb);
-}
-
-void gas_truncate_inode(struct inode *inode)
-{
-    truncate(inode);
-}
-
 int gas_get_block(struct inode *inode, sector_t block, struct buffer_head *bh, int create)
 {
-    return get_block(inode, block, bh, create);
+
+    int err = -EIO;
+    int offsets[DEPTH];
+    Indirect chain[DEPTH];
+    Indirect *partial;
+    int left;
+    int depth = block_to_path(inode, block, offsets);
+
+    if (depth == 0)
+    {
+        return err;
+    }
+
+reread:
+    partial = get_branch(inode, depth, offsets, chain, &err);
+
+    /* Simplest case - block found, no allocation needed */
+    if (!partial)
+    {
+    got_it:
+        pr_debug("ino %ld, block %ld -> %d\n", inode->i_ino, block, block_to_cpu(chain[depth - 1].key));
+        map_bh(bh, inode->i_sb, block_to_cpu(chain[depth - 1].key));
+        /* Clean up and exit */
+        partial = chain + depth - 1; /* the whole chain */
+        goto cleanup;
+    }
+
+    /* Next simple case - plain lookup or failed read of indirect block */
+    if (!create || err == -EIO)
+    {
+    cleanup:
+        while (partial > chain)
+        {
+            brelse(partial->bh);
+            partial--;
+        }
+        return err;
+    }
+
+    pr_debug("ino %ld, try to allocate block %ld\n", inode->i_ino, block);
+    /*
+     * Indirect block might be removed by truncate while we were
+     * reading it. Handling of that case (forget what we've got and
+     * reread) is taken out of the main path.
+     */
+    if (err == -EAGAIN)
+        goto changed;
+
+    left = (chain + depth) - partial;
+    err = alloc_branch(inode, left, offsets + (partial - chain), partial);
+    if (err)
+        goto cleanup;
+
+    if (splice_branch(inode, chain, partial, left) < 0)
+        goto changed;
+
+    set_buffer_new(bh);
+    goto got_it;
+
+changed:
+    while (partial > chain)
+    {
+        brelse(partial->bh);
+        partial--;
+    }
+    goto reread;
 }

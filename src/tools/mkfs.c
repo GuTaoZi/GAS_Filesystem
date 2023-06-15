@@ -286,7 +286,7 @@ struct gas_inode *get_inode(u32 ino_id)
 
 u32 new_inode(mode_t mode, int byte_size)
 {
-    int nblocks = (byte_size + GAS_BLOCK_SIZE - 1) / GAS_BLOCK_SIZE;
+    int block_count = (byte_size + GAS_BLOCK_SIZE - 1) / GAS_BLOCK_SIZE;
     u32 ino_id = allocate_inode();
     if (ino_id == INVALID_NO)
     {
@@ -298,7 +298,7 @@ u32 new_inode(mode_t mode, int byte_size)
         printf("Cannot read inode\n");
         exit(1);
     }
-    ino->i_blkaddr[0] = allocate_blk(nblocks);
+    ino->i_blkaddr[0] = allocate_blk(block_count);
     if (ino->i_blkaddr[0] == INVALID_NO)
     {
         free_inode(ino_id);
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
     gas.iam_blk = (gas.ino_cnt + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
     gas.data_st = 1 + gas.bam_blk + gas.iam_blk + gas.ino_blk;
 
-    printf("===============================GAS File Sys Info================================\n");
+    printf("==============================GAS File Sys Info===============================\n");
     printf("Disk size = %lld\n", (ll)size);
     printf("Number of Blocks = %lld\n", (ll)gas.blk_cnt);
     printf("BAM blocks = %lld\n", (ll)gas.bam_blk);
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
     printf("inode blocks = %lld\n", (ll)gas.ino_blk);
     printf("Number of inodes = %lld\n", (ll)gas.ino_cnt);
     printf("Data block starts at %lld block\n", (ll)gas.data_st);
-    printf("================================================================================\n");
+    printf("==============================================================================\n");
 
     init_super_block();
     init_block_alloc_map();
