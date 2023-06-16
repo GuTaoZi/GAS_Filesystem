@@ -2,6 +2,8 @@
 
 A custom Linux file system designed and implemented as a kernel module. Project for CS334 Operating System. [Task description here](https://github.com/oscomp/proj209-custom-filesystem).
 
+This project is open source on GitHub: [GAS_Filesystem](https://github.com/GuTaoZi/GAS_Filesystem).
+
 ## Contributors
 
 | SID      | Name                                            | Contributions                        | Contribution Rate |
@@ -334,4 +336,4 @@ See [CHANGELOG.md](https://github.com/GuTaoZi/GAS_Filesystem/blob/main/CHANGELOG
       - [x] Directory
   - [x] Annotations
 - [x] Project report
-- [ ] Project video
+- [x] Project video
